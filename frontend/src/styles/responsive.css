@@ -1,0 +1,20 @@
+@media (max-width: 700px) {
+
+    .vf-search {
+        width: 100%;
+    }
+
+    .page-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .page-header-action {
+        width: 100%;
+    }
+
+    .page-header-action .vf-button {
+        width: 100%;
+    }
+
+}

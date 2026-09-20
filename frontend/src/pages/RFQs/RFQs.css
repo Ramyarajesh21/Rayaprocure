@@ -1,0 +1,461 @@
+/* =========================================================
+   RFQ PAGE
+========================================================= */
+
+.rfq-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+.rfq-toolbar .vf-search {
+    flex: 1;
+    min-width: 0;
+}
+
+.rfq-filter {
+    width: 150px;
+    height: 40px;
+
+    padding: 0 12px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+
+    cursor: pointer;
+
+    transition: var(--transition-fast);
+}
+
+.rfq-filter:hover {
+    border-color: var(--color-accent);
+}
+
+.rfq-filter:focus {
+    border-color: var(--color-accent);
+}
+
+
+/* =========================================================
+   SUMMARY
+========================================================= */
+
+.rfq-summary {
+    width: 100%;
+    margin-bottom: 12px;
+
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.rfq-summary strong {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+
+/* =========================================================
+   RFQ TABLE
+========================================================= */
+
+.rfq-page-table {
+    width: 100%;
+}
+
+.rfq-page-table .vf-table-wrapper {
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.rfq-page-table .vf-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+
+/* Column sizing */
+
+.rfq-page-table .vf-table th:nth-child(1),
+.rfq-page-table .vf-table td:nth-child(1) {
+    width: 11%;
+}
+
+.rfq-page-table .vf-table th:nth-child(2),
+.rfq-page-table .vf-table td:nth-child(2) {
+    width: 18%;
+}
+
+.rfq-page-table .vf-table th:nth-child(3),
+.rfq-page-table .vf-table td:nth-child(3) {
+    width: 12%;
+}
+
+.rfq-page-table .vf-table th:nth-child(4),
+.rfq-page-table .vf-table td:nth-child(4) {
+    width: 12%;
+}
+
+.rfq-page-table .vf-table th:nth-child(5),
+.rfq-page-table .vf-table td:nth-child(5) {
+    width: 15%;
+}
+
+.rfq-page-table .vf-table th:nth-child(6),
+.rfq-page-table .vf-table td:nth-child(6) {
+    width: 10%;
+}
+
+.rfq-page-table .vf-table th:nth-child(7),
+.rfq-page-table .vf-table td:nth-child(7) {
+    width: 22%;
+}
+
+
+/* Keep table text inside cells */
+
+.rfq-page-table .vf-table th,
+.rfq-page-table .vf-table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
+
+.rfq-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+
+    width: 100%;
+
+    white-space: nowrap;
+}
+
+.rfq-actions button {
+    flex: 0 0 auto;
+
+    padding: 5px 7px;
+
+    border-radius: 5px;
+
+    background: transparent;
+    color: var(--color-primary);
+
+    font-size: 11px;
+    font-weight: var(--font-weight-medium);
+
+    transition: var(--transition-fast);
+}
+
+.rfq-actions button:hover {
+    background: var(--color-accent-soft);
+    color: var(--color-primary-light);
+}
+
+.rfq-actions .rfq-delete-button {
+    color: var(--color-danger);
+}
+
+.rfq-actions .rfq-delete-button:hover {
+    background: rgba(184, 92, 98, 0.09);
+}
+
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.rfq-form {
+    width: 100%;
+}
+
+.rfq-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.rfq-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rfq-form-group label {
+    color: var(--color-text-primary);
+
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+.rfq-form-group input,
+.rfq-form-group select,
+.rfq-form-group textarea {
+    width: 100%;
+
+    padding: 10px 12px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+
+    background: var(--color-surface-soft);
+    color: var(--color-text-primary);
+
+    font-size: var(--font-size-sm);
+
+    transition: var(--transition-fast);
+}
+
+.rfq-form-group input,
+.rfq-form-group select {
+    height: 42px;
+}
+
+.rfq-form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.rfq-form-group input:hover,
+.rfq-form-group select:hover,
+.rfq-form-group textarea:hover {
+    border-color: #d5c7cc;
+}
+
+.rfq-form-group input:focus,
+.rfq-form-group select:focus,
+.rfq-form-group textarea:focus {
+    border-color: var(--color-accent);
+    background: var(--color-surface);
+
+    box-shadow:
+        0 0 0 3px var(--color-accent-soft);
+}
+
+.rfq-form-full {
+    grid-column: 1 / -1;
+}
+
+
+/* =========================================================
+   FORM ACTIONS
+========================================================= */
+
+.rfq-form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+
+    margin-top: 22px;
+    padding-top: 16px;
+
+    border-top: 1px solid var(--color-border-light);
+}
+
+
+/* =========================================================
+   VIEW MODAL
+========================================================= */
+
+.rfq-view {
+    width: 100%;
+}
+
+.rfq-view-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 18px;
+
+    margin-bottom: 20px;
+    padding-bottom: 18px;
+
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.rfq-view-label {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: var(--color-text-muted);
+
+    font-size: 10px;
+    font-weight: var(--font-weight-semibold);
+
+    letter-spacing: 0.12em;
+}
+
+.rfq-view-header h2 {
+    color: var(--color-primary);
+
+    font-size: 21px;
+    font-weight: var(--font-weight-semibold);
+}
+
+.rfq-view-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.rfq-view-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    min-width: 0;
+
+    padding: 13px;
+
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
+
+    background: var(--color-surface-soft);
+}
+
+.rfq-view-item span {
+    color: var(--color-text-muted);
+
+    font-size: 11px;
+    font-weight: var(--font-weight-medium);
+}
+
+.rfq-view-item strong {
+    color: var(--color-text-primary);
+
+    font-size: 14px;
+    font-weight: var(--font-weight-semibold);
+
+    overflow-wrap: anywhere;
+}
+
+.rfq-view-item p {
+    color: var(--color-text-secondary);
+
+    font-size: 13px;
+    line-height: 1.6;
+
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.rfq-view-full {
+    grid-column: 1 / -1;
+}
+
+
+/* =========================================================
+   VIEW ACTIONS
+========================================================= */
+
+.rfq-view-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+
+    margin-top: 20px;
+    padding-top: 16px;
+
+    border-top: 1px solid var(--color-border-light);
+}
+
+
+/* =========================================================
+   LAPTOP / SMALL DESKTOP
+========================================================= */
+
+@media (max-width: 1200px) {
+
+    .rfq-page-table .vf-table {
+        font-size: 12px;
+    }
+
+    .rfq-actions {
+        gap: 2px;
+    }
+
+    .rfq-actions button {
+        padding: 5px 6px;
+        font-size: 10px;
+    }
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .rfq-form-grid,
+    .rfq-view-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .rfq-form-full,
+    .rfq-view-full {
+        grid-column: auto;
+    }
+
+    .rfq-page-table .vf-table {
+        table-layout: auto;
+    }
+
+    .rfq-page-table .vf-table th,
+    .rfq-page-table .vf-table td {
+        white-space: normal;
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+    .rfq-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .rfq-filter {
+        width: 100%;
+    }
+
+    .rfq-actions {
+        flex-wrap: wrap;
+    }
+
+    .rfq-view-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .rfq-form-actions,
+    .rfq-view-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .rfq-form-actions button,
+    .rfq-view-actions button {
+        width: 100%;
+    }
+}

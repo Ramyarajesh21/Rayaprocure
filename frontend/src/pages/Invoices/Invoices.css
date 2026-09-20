@@ -1,0 +1,172 @@
+.invoices-page {
+    width: 100%;
+}
+
+
+/* =========================================================
+   TOOLBAR
+   ========================================================= */
+
+.invoices-page .vf-page-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.invoices-page .vf-filter-select {
+    min-width: 140px;
+    height: 38px;
+    padding: 0 12px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   INVOICE FORM
+   ========================================================= */
+
+.vf-form {
+    width: 100%;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.vf-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.vf-form-field label {
+    color: var(--color-text-secondary);
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.vf-form-field input,
+.vf-form-field select {
+    width: 100%;
+    height: 42px;
+
+    padding: 0 12px;
+
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+
+    background: var(--color-surface-soft);
+    color: var(--color-text-primary);
+
+    font-size: 13px;
+
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.vf-form-field input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.vf-form-field input:hover,
+.vf-form-field select:hover {
+    border-color: rgba(208, 173, 112, 0.45);
+}
+
+.vf-form-field input:focus,
+.vf-form-field select:focus {
+    outline: none;
+
+    background: var(--color-surface);
+
+    border-color: var(--color-accent);
+
+    box-shadow:
+        0 0 0 3px var(--color-accent-soft);
+}
+
+
+/* =========================================================
+   FORM BUTTONS
+   ========================================================= */
+
+.vf-form-actions {
+    grid-column: 1 / -1;
+
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+
+    margin-top: 8px;
+    padding-top: 16px;
+
+    border-top: 1px solid var(--color-border-light);
+}
+
+
+/* =========================================================
+   INVOICE DETAILS
+   ========================================================= */
+
+.vf-detail-list {
+    display: grid;
+    gap: 14px;
+}
+
+.vf-detail-list > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding-bottom: 12px;
+
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.vf-detail-list span {
+    color: var(--color-text-muted);
+    font-size: 13px;
+}
+
+.vf-detail-list strong {
+    color: var(--color-text-primary);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    .invoices-page .vf-page-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .invoices-page .vf-filter-select {
+        width: 100%;
+    }
+
+    .vf-form {
+        grid-template-columns: 1fr;
+    }
+
+    .vf-form-actions {
+        grid-column: auto;
+        flex-direction: column-reverse;
+    }
+}

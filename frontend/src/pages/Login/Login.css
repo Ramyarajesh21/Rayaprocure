@@ -1,0 +1,776 @@
+/* =========================================================
+   RAYAPROCURE LOGIN PAGE
+   Warehouse Operations • Midnight Slate • Champagne Gold
+   ========================================================= */
+
+
+/* =========================================================
+   PAGE
+   ========================================================= */
+
+.login-page {
+    min-height: 100vh;
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+
+    padding: 40px 24px;
+    box-sizing: border-box;
+
+    background-color: #0f172a;
+    background-image: var(--login-background-image);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+
+/* =========================================================
+   WAREHOUSE IMAGE OVERLAY
+   ========================================================= */
+
+.login-page::before {
+    content: "";
+
+    position: absolute;
+    inset: -20px;
+
+    z-index: -2;
+
+    background:
+        linear-gradient(
+            110deg,
+            rgba(7, 18, 35, 0.88) 0%,
+            rgba(15, 35, 58, 0.70) 42%,
+            rgba(30, 41, 59, 0.64) 68%,
+            rgba(20, 28, 44, 0.80) 100%
+        );
+
+    backdrop-filter: blur(4px);
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   SOFT BLUE + WARM LIGHTING
+   ========================================================= */
+
+.login-page::after {
+    content: "";
+
+    position: absolute;
+    inset: 0;
+
+    z-index: -1;
+
+    background:
+        radial-gradient(
+            circle at 78% 18%,
+            rgba(238, 190, 104, 0.16) 0%,
+            rgba(238, 190, 104, 0.05) 24%,
+            transparent 48%
+        ),
+        radial-gradient(
+            circle at 18% 75%,
+            rgba(72, 142, 196, 0.13) 0%,
+            transparent 42%
+        ),
+        linear-gradient(
+            180deg,
+            rgba(8, 22, 40, 0.08),
+            rgba(8, 17, 30, 0.34)
+        );
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   LOGIN CARD
+   ========================================================= */
+
+.login-card {
+    width: 100%;
+    max-width: 450px;
+
+    position: relative;
+    z-index: 2;
+
+    box-sizing: border-box;
+
+    padding: 38px 40px 28px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(30, 41, 59, 0.97),
+            rgba(20, 30, 46, 0.96)
+        );
+
+    border: 1px solid rgba(212, 175, 55, 0.52);
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.48),
+        0 12px 35px rgba(0, 0, 0, 0.28),
+        0 0 45px rgba(212, 175, 55, 0.045);
+
+    backdrop-filter: blur(18px);
+
+    animation: loginCardIn 0.65s ease-out both;
+
+    transition:
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        transform 0.25s ease;
+}
+
+
+.login-card:hover {
+    border-color: rgba(212, 175, 55, 0.68);
+
+    box-shadow:
+        0 34px 85px rgba(0, 0, 0, 0.52),
+        0 14px 38px rgba(0, 0, 0, 0.30),
+        0 0 48px rgba(212, 175, 55, 0.065);
+}
+
+
+@keyframes loginCardIn {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.985);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+
+/* =========================================================
+   LOGO
+   ========================================================= */
+
+.login-logo {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 25px;
+}
+
+
+.rayaprocure-logo {
+    display: block;
+
+    width: 180px;
+    height: 62px;
+
+    object-fit: contain;
+    object-position: center;
+
+    max-width: 100%;
+
+    filter:
+        drop-shadow(0 4px 12px rgba(0, 0, 0, 0.20));
+}
+
+
+/* =========================================================
+   HEADING
+   ========================================================= */
+
+.login-heading {
+    margin-bottom: 27px;
+
+    text-align: center;
+}
+
+
+.login-heading h1 {
+    margin: 0 0 9px;
+
+    color: #f8fafc;
+
+    font-size: 30px;
+    line-height: 1.2;
+    font-weight: 700;
+
+    letter-spacing: -0.65px;
+}
+
+
+.login-heading h1::first-letter {
+    color: #f8fafc;
+}
+
+
+.login-heading p {
+    margin: 0;
+
+    color: #aebaca;
+
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   FORM
+   ========================================================= */
+
+.login-form {
+    width: 100%;
+}
+
+
+.login-field {
+    margin-bottom: 19px;
+}
+
+
+.login-field label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #e5e7eb;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    letter-spacing: 0.15px;
+}
+
+
+/* =========================================================
+   INPUT
+   ========================================================= */
+
+.login-field input {
+    width: 100%;
+    height: 49px;
+
+    box-sizing: border-box;
+
+    padding: 0 15px;
+
+    border: 1px solid rgba(100, 116, 139, 0.78);
+    border-radius: 10px;
+
+    outline: none;
+
+    background: rgba(38, 52, 73, 0.88);
+    color: #f8fafc;
+
+    font-family: inherit;
+    font-size: 13px;
+
+    transition:
+        border-color 0.2s ease,
+        background-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.login-field input::placeholder {
+    color: #8795a8;
+}
+
+
+.login-field input:hover {
+    border-color: rgba(148, 163, 184, 0.85);
+}
+
+
+.login-field input:focus {
+    border-color: #d4af37;
+
+    background: rgba(42, 57, 79, 0.96);
+
+    box-shadow:
+        0 0 0 3px rgba(212, 175, 55, 0.10),
+        0 0 18px rgba(212, 175, 55, 0.055);
+}
+
+
+/* =========================================================
+   PASSWORD
+   ========================================================= */
+
+.login-password-wrapper {
+    position: relative;
+}
+
+
+.login-password-wrapper input {
+    padding-right: 72px;
+}
+
+
+.login-password-toggle {
+    position: absolute;
+
+    top: 50%;
+    right: 11px;
+
+    transform: translateY(-50%);
+
+    border: none;
+    background: transparent;
+
+    padding: 6px 7px;
+
+    color: #d4af37;
+
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.login-password-toggle:hover {
+    color: #f0d77a;
+
+    transform: translateY(-50%);
+}
+
+
+.login-password-toggle:focus-visible {
+    outline: 2px solid rgba(212, 175, 55, 0.5);
+    outline-offset: 2px;
+
+    border-radius: 5px;
+}
+
+
+/* =========================================================
+   ERROR
+   ========================================================= */
+
+.login-error {
+    margin: -3px 0 17px;
+
+    padding: 11px 13px;
+
+    border: 1px solid rgba(248, 113, 113, 0.32);
+
+    border-radius: 9px;
+
+    background: rgba(127, 29, 29, 0.23);
+
+    color: #fca5a5;
+
+    font-size: 12px;
+    line-height: 1.45;
+
+    animation: loginErrorIn 0.2s ease;
+}
+
+
+@keyframes loginErrorIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* =========================================================
+   REMEMBER / FORGOT
+   ========================================================= */
+
+.login-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin: 5px 0 22px;
+}
+
+
+.login-remember {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    color: #b9c4d2;
+
+    font-size: 11px;
+
+    cursor: pointer;
+
+    user-select: none;
+}
+
+
+.login-remember input {
+    width: 15px;
+    height: 15px;
+
+    margin: 0;
+
+    accent-color: #d4af37;
+
+    cursor: pointer;
+}
+
+
+.login-forgot {
+    border: none;
+    background: transparent;
+
+    padding: 0;
+
+    color: #d4af37;
+
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        color 0.2s ease,
+        text-decoration 0.2s ease;
+}
+
+
+.login-forgot:hover {
+    color: #f0d77a;
+
+    text-decoration: underline;
+}
+
+
+.login-forgot:focus-visible {
+    outline: 2px solid rgba(212, 175, 55, 0.45);
+    outline-offset: 4px;
+
+    border-radius: 3px;
+}
+
+
+/* =========================================================
+   SIGN IN BUTTON
+   ========================================================= */
+
+.login-submit {
+    width: 100%;
+    height: 49px;
+
+    border: 1px solid rgba(212, 175, 55, 0.65);
+
+    border-radius: 11px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #d4af37,
+            #e3c45d
+        );
+
+    color: #111827;
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+
+    letter-spacing: 0.15px;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 9px 22px rgba(0, 0, 0, 0.24),
+        0 0 0 rgba(212, 175, 55, 0);
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.login-submit:hover:not(:disabled) {
+    background:
+        linear-gradient(
+            135deg,
+            #e0bd48,
+            #f0d77a
+        );
+
+    border-color: #f0d77a;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 12px 27px rgba(0, 0, 0, 0.30),
+        0 0 22px rgba(212, 175, 55, 0.14);
+}
+
+
+.login-submit:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+
+.login-submit:focus-visible {
+    outline: none;
+
+    box-shadow:
+        0 0 0 3px rgba(212, 175, 55, 0.18),
+        0 9px 22px rgba(0, 0, 0, 0.24);
+}
+
+
+.login-submit:disabled {
+    opacity: 0.58;
+
+    cursor: not-allowed;
+
+    box-shadow: none;
+}
+
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.login-footer {
+    margin-top: 25px;
+
+    padding-top: 18px;
+
+    border-top: 1px solid rgba(148, 163, 184, 0.16);
+
+    text-align: center;
+
+    color: #8491a3;
+
+    font-size: 10px;
+    font-weight: 500;
+
+    letter-spacing: 0.2px;
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .login-page {
+        padding: 32px 20px;
+    }
+
+    .login-card {
+        max-width: 430px;
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+    .login-page {
+        min-height: 100svh;
+
+        padding: 24px 17px;
+
+        background-position: center;
+    }
+
+
+    .login-page::before {
+        inset: -15px;
+
+        background:
+            linear-gradient(
+                135deg,
+                rgba(7, 18, 35, 0.88),
+                rgba(15, 35, 58, 0.78),
+                rgba(20, 28, 44, 0.84)
+            );
+
+        backdrop-filter: blur(4px);
+    }
+
+
+    .login-card {
+        width: 100%;
+        max-width: 430px;
+
+        padding: 33px 25px 25px;
+
+        border-radius: 18px;
+    }
+
+
+    .login-logo {
+        margin-bottom: 22px;
+    }
+
+
+    .rayaprocure-logo {
+        width: 165px;
+        height: 56px;
+    }
+
+
+    .login-heading {
+        margin-bottom: 24px;
+    }
+
+
+    .login-heading h1 {
+        font-size: 27px;
+    }
+
+
+    .login-heading p {
+        font-size: 12px;
+    }
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 420px) {
+
+    .login-page {
+        padding: 15px 12px;
+    }
+
+
+    .login-card {
+        padding: 28px 20px 22px;
+
+        border-radius: 16px;
+    }
+
+
+    .rayaprocure-logo {
+        width: 150px;
+        height: 52px;
+    }
+
+
+    .login-heading h1 {
+        font-size: 25px;
+    }
+
+
+    .login-heading p {
+        font-size: 11px;
+    }
+
+
+    .login-field {
+        margin-bottom: 17px;
+    }
+
+
+    .login-field input {
+        height: 47px;
+
+        font-size: 12px;
+    }
+
+
+    .login-options {
+        align-items: flex-start;
+
+        flex-direction: column;
+
+        gap: 11px;
+    }
+
+
+    .login-forgot {
+        align-self: flex-end;
+    }
+
+
+    .login-submit {
+        height: 48px;
+    }
+
+
+    .login-footer {
+        margin-top: 22px;
+        padding-top: 16px;
+
+        font-size: 9px;
+    }
+}
+
+
+/* =========================================================
+   VERY SMALL DEVICES
+   ========================================================= */
+
+@media (max-width: 350px) {
+
+    .login-page {
+        padding: 10px 8px;
+    }
+
+
+    .login-card {
+        padding: 24px 17px 20px;
+    }
+
+
+    .login-heading h1 {
+        font-size: 23px;
+    }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .login-page *,
+    .login-page *::before,
+    .login-page *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}

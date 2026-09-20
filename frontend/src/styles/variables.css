@@ -1,0 +1,389 @@
+/* =========================================================
+   RAYAPROCURE / VENDORFLOW DESIGN VARIABLES
+   =========================================================
+   THEMES
+   1. Light — Modern Obsidian & Cobalt
+   2. Dark  — Midnight Slate & Champagne Gold
+   ========================================================= */
+
+
+/* =========================================================
+   LIGHT THEME
+   Modern Obsidian & Cobalt
+   ========================================================= */
+
+:root {
+
+    /* =====================================================
+       PRIMARY / INTERACTIVE
+    ===================================================== */
+
+    --color-primary: #2563eb;
+    --color-primary-dark: #1d4ed8;
+    --color-primary-deep: #1e3a8a;
+    --color-primary-light: #4f46e5;
+
+
+    /* =====================================================
+       ACCENT
+    ===================================================== */
+
+    --color-accent: #4f46e5;
+    --color-accent-light: #6366f1;
+    --color-accent-soft: rgba(37, 99, 235, 0.08);
+
+
+    /* =====================================================
+       APPLICATION BACKGROUND
+    ===================================================== */
+
+    --color-background: #f3f4f6;
+    --color-surface: #ffffff;
+    --color-surface-soft: #f8fafc;
+
+
+    /* =====================================================
+       TYPOGRAPHY
+    ===================================================== */
+
+    --color-text-primary: #111827;
+    --color-text-secondary: #4b5563;
+    --color-text-muted: #6b7280;
+
+    --color-text-light: #f9fafb;
+    --color-text-light-muted: rgba(249, 250, 251, 0.58);
+
+
+    /* =====================================================
+       BORDERS
+    ===================================================== */
+
+    --color-border: #dfe3e8;
+    --color-border-light: #e9edf2;
+
+
+    /* =====================================================
+       STATUS COLORS
+    ===================================================== */
+
+    --color-success: #065f46;
+    --color-warning: #c2410c;
+    --color-danger: #b91c1c;
+    --color-info: #2563eb;
+
+    --color-success-bg: #d1fae5;
+    --color-warning-bg: #ffedd5;
+    --color-danger-bg: #fee2e2;
+    --color-info-bg: #dbeafe;
+
+
+    /* =====================================================
+       SHADOWS
+    ===================================================== */
+
+    --shadow-xs:
+        0 1px 3px rgba(15, 23, 42, 0.05);
+
+    --shadow-sm:
+        0 4px 12px rgba(15, 23, 42, 0.07);
+
+    --shadow-md:
+        0 10px 25px rgba(15, 23, 42, 0.09);
+
+    --shadow-lg:
+        0 18px 45px rgba(15, 23, 42, 0.13);
+
+
+    /* =====================================================
+       GLOW
+    ===================================================== */
+
+    --color-glow: rgba(37, 99, 235, 0.16);
+
+
+    /* =====================================================
+       THEME SPECIFIC
+    ===================================================== */
+
+    --theme-sidebar: #ffffff;
+    --theme-navbar: #ffffff;
+    --theme-details: #ffffff;
+    --theme-input: #ffffff;
+    --theme-modal: #ffffff;
+
+    --theme-hover: rgba(37, 99, 235, 0.06);
+    --theme-highlight: #2563eb;
+    --theme-highlight-soft: rgba(37, 99, 235, 0.08);
+
+    --theme-overlay: rgba(15, 23, 42, 0.42);
+
+    --theme-glass:
+        rgba(255, 255, 255, 0.78);
+
+    --theme-highlight-border:
+        rgba(37, 99, 235, 0.22);
+}
+
+
+/* =========================================================
+   DARK THEME
+   Midnight Slate & Champagne Gold
+   ========================================================= */
+
+[data-theme="dark"] {
+
+    /* =====================================================
+       PRIMARY / INTERACTIVE
+       Gold is mainly used for interaction and highlights.
+    ===================================================== */
+
+    --color-primary: #d4af37;
+    --color-primary-dark: #b8962e;
+    --color-primary-deep: #8f7425;
+    --color-primary-light: #e2c766;
+
+
+    /* =====================================================
+       ACCENT
+    ===================================================== */
+
+    --color-accent: #d4af37;
+    --color-accent-light: #c5a059;
+    --color-accent-soft: rgba(212, 175, 55, 0.10);
+
+
+    /* =====================================================
+       MIDNIGHT SLATE BACKGROUNDS
+    ===================================================== */
+
+    /* Main application background */
+    --color-background: #0f172a;
+
+    /* Main cards / panels */
+    --color-surface: #1e293b;
+
+    /* Slightly lighter details / forms */
+    --color-surface-soft: #263449;
+
+
+    /* =====================================================
+       TYPOGRAPHY
+    ===================================================== */
+
+    --color-text-primary: #f8fafc;
+    --color-text-secondary: #cbd5e1;
+    --color-text-muted: #94a3b8;
+
+    --color-text-light: #f8fafc;
+    --color-text-light-muted: rgba(248, 250, 252, 0.58);
+
+
+    /* =====================================================
+       BORDERS
+    ===================================================== */
+
+    --color-border: #334155;
+    --color-border-light: #273449;
+
+
+    /* =====================================================
+       STATUS COLORS
+    ===================================================== */
+
+    --color-success: #34d399;
+    --color-warning: #fbbf24;
+    --color-danger: #fb7185;
+    --color-info: #60a5fa;
+
+    --color-success-bg: #065f46;
+    --color-warning-bg: #78350f;
+    --color-danger-bg: #4c0519;
+    --color-info-bg: #172554;
+
+
+    /* =====================================================
+       SHADOWS
+    ===================================================== */
+
+    --shadow-xs:
+        0 1px 3px rgba(0, 0, 0, 0.28);
+
+    --shadow-sm:
+        0 5px 16px rgba(0, 0, 0, 0.32);
+
+    --shadow-md:
+        0 10px 28px rgba(0, 0, 0, 0.38);
+
+    --shadow-lg:
+        0 18px 45px rgba(0, 0, 0, 0.48);
+
+
+    /* =====================================================
+       GOLD GLOW
+    ===================================================== */
+
+    --color-glow: rgba(212, 175, 55, 0.16);
+
+
+    /* =====================================================
+       DARK THEME STRUCTURE
+    ===================================================== */
+
+    /* Sidebar */
+    --theme-sidebar: #0f172a;
+
+    /* Navbar */
+    --theme-navbar: #0f172a;
+
+    /* Main detail/card surface */
+    --theme-details: #1e293b;
+
+    /* Form/input surface */
+    --theme-input: #263449;
+
+    /* Modal */
+    --theme-modal: #1e293b;
+
+
+    /* =====================================================
+       GOLD INTERACTION
+    ===================================================== */
+
+    --theme-hover: rgba(212, 175, 55, 0.08);
+
+    --theme-highlight: #d4af37;
+
+    --theme-highlight-soft:
+        rgba(212, 175, 55, 0.10);
+
+    --theme-highlight-border:
+        rgba(212, 175, 55, 0.28);
+
+
+    /* =====================================================
+       DARK GLASS / OVERLAY
+    ===================================================== */
+
+    --theme-glass:
+        rgba(30, 41, 59, 0.78);
+
+    --theme-overlay:
+        rgba(2, 6, 23, 0.72);
+
+
+    /* =====================================================
+       GOLD GLOW
+    ===================================================== */
+
+    --theme-gold-glow:
+        0 0 25px rgba(212, 175, 55, 0.12);
+}
+
+
+/* =========================================================
+   SHARED LAYOUT VARIABLES
+   ========================================================= */
+
+:root {
+
+    --sidebar-width: 258px;
+    --navbar-height: 74px;
+    --content-max-width: 1600px;
+
+
+    /* =====================================================
+       BORDER RADIUS
+    ===================================================== */
+
+    --radius-xs: 6px;
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+
+
+    /* =====================================================
+       TYPOGRAPHY
+    ===================================================== */
+
+    --font-family:
+        "Inter",
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+    --font-size-xs: 11px;
+    --font-size-sm: 13px;
+    --font-size-md: 14px;
+    --font-size-lg: 16px;
+    --font-size-xl: 20px;
+    --font-size-2xl: 26px;
+    --font-size-3xl: 32px;
+
+
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+
+    /* =====================================================
+       TRANSITIONS
+    ===================================================== */
+
+    --transition-fast: 0.18s ease;
+    --transition-normal: 0.28s ease;
+    --transition-slow: 0.4s ease;
+}
+
+
+/* =========================================================
+   GLOBAL INTERACTION VARIABLES
+   ========================================================= */
+
+:root {
+
+    --button-height: 40px;
+    --input-height: 40px;
+
+    --card-radius: 18px;
+    --input-radius: 10px;
+    --button-radius: 10px;
+
+    --hover-lift: translateY(-2px);
+
+    --focus-ring:
+        0 0 0 3px var(--color-accent-soft);
+
+    --interactive-shadow:
+        0 8px 20px var(--color-glow);
+}
+
+
+/* =========================================================
+   TABLE / FINANCIAL NUMBER STYLE
+   ========================================================= */
+
+:root {
+
+    --number-font-feature:
+        "tnum" 1,
+        "lnum" 1;
+}
+
+
+/* =========================================================
+   ACCESSIBILITY / REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    :root {
+
+        --transition-fast: 0s;
+        --transition-normal: 0s;
+        --transition-slow: 0s;
+    }
+}

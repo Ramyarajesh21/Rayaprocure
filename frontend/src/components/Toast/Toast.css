@@ -1,0 +1,205 @@
+/* =========================================================
+   RAYAPROCURE TOAST NOTIFICATION
+   Theme-aware Light / Dark
+   ========================================================= */
+
+.rayaprocure-toast {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+
+    width: min(380px, calc(100vw - 32px));
+    min-height: 58px;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 13px 14px;
+
+    border-radius: 10px;
+
+    z-index: 9999;
+
+    animation: rayaprocureToastIn 0.3s ease-out;
+
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+
+/* =========================================================
+   LIGHT THEME
+   ========================================================= */
+
+html[data-theme="light"] .rayaprocure-toast {
+    background: #ffffff;
+    color: #263238;
+
+    border: 1px solid #d8c28a;
+
+    box-shadow:
+        0 10px 30px rgba(31, 41, 55, 0.14),
+        0 2px 8px rgba(31, 41, 55, 0.08);
+}
+
+
+/* =========================================================
+   DARK THEME
+   ========================================================= */
+
+html[data-theme="dark"] .rayaprocure-toast {
+    background: #1c2430;
+    color: #f4f1e8;
+
+    border: 1px solid #b99a52;
+
+    box-shadow:
+        0 12px 32px rgba(0, 0, 0, 0.45),
+        0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+
+/* =========================================================
+   ICON
+   ========================================================= */
+
+.toast-icon {
+    width: 30px;
+    height: 30px;
+
+    flex: 0 0 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    font-size: 16px;
+    font-weight: 700;
+}
+
+
+/* Success */
+
+.rayaprocure-toast.success .toast-icon {
+    background: rgba(185, 154, 82, 0.16);
+    color: #b99a52;
+}
+
+
+/* Error */
+
+.rayaprocure-toast.error .toast-icon {
+    background: rgba(190, 70, 70, 0.12);
+    color: #c75c5c;
+}
+
+
+/* =========================================================
+   MESSAGE
+   ========================================================= */
+
+.toast-message {
+    flex: 1;
+
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.45;
+}
+
+
+/* =========================================================
+   CLOSE BUTTON
+   ========================================================= */
+
+.toast-close {
+    width: 26px;
+    height: 26px;
+
+    flex: 0 0 26px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: none;
+    background: transparent;
+
+    color: inherit;
+
+    font-size: 20px;
+    font-weight: 400;
+
+    cursor: pointer;
+
+    border-radius: 6px;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.toast-close:hover {
+    background: rgba(185, 154, 82, 0.12);
+    color: #b99a52;
+}
+
+
+/* =========================================================
+   ANIMATION
+   ========================================================= */
+
+@keyframes rayaprocureToastIn {
+    from {
+        opacity: 0;
+        transform: translateX(24px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    .rayaprocure-toast {
+        top: 16px;
+        right: 16px;
+        left: 16px;
+
+        width: auto;
+
+        min-height: 54px;
+
+        padding: 12px;
+    }
+
+    .toast-message {
+        font-size: 13px;
+    }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .rayaprocure-toast {
+        animation: none;
+    }
+}
