@@ -35,8 +35,8 @@ const DEFAULT_USERS = [
     },
     {
         id: 3,
-        name: "Purchase",
-        role: "Purchase",
+        name: "Operations",
+        role: "Operations",
         description: "RFQ and quotation management",
         initial: "P",
         active: true
@@ -68,7 +68,7 @@ function getLoggedInUser() {
 
         /*
          * VendorFlow has three roles:
-         * Owner / Accounts / Purchase
+         * Owner / Accounts / Operations
          */
 
         return parsedUser;
@@ -114,7 +114,7 @@ function getNotificationRole(role) {
     if (
         role !== "Owner" &&
         role !== "Accounts" &&
-        role !== "Purchase"
+        role !== "Operations"
     ) {
         return "Owner";
     }
@@ -1452,7 +1452,7 @@ function Settings() {
                                 <div className="settings-note">
 
                                     Only the Owner can manage user access.
-                                    Accounts and Purchase cannot access this section.
+                                    Accounts and Operations cannot access this section.
 
                                 </div>
 

@@ -80,7 +80,28 @@
 }
 
 
-/* Column sizing */
+/* =========================================================
+   RFQ TABLE HEADER
+========================================================= */
+
+.rfq-page-table .vf-table thead {
+    background: var(--color-accent) !important;
+}
+
+.rfq-page-table .vf-table thead tr {
+    background: var(--color-accent) !important;
+}
+
+.rfq-page-table .vf-table thead th,
+.rfq-page-table .vf-table th {
+    background: var(--color-accent) !important;
+    color: #000000 !important;
+}
+
+
+/* =========================================================
+   COLUMN SIZING
+========================================================= */
 
 .rfq-page-table .vf-table th:nth-child(1),
 .rfq-page-table .vf-table td:nth-child(1) {
@@ -118,7 +139,9 @@
 }
 
 
-/* Keep table text inside cells */
+/* =========================================================
+   KEEP TABLE TEXT INSIDE CELLS
+========================================================= */
 
 .rfq-page-table .vf-table th,
 .rfq-page-table .vf-table td {

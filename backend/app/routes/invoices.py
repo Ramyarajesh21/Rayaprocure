@@ -6,6 +6,12 @@ invoices_bp = Blueprint("invoices", __name__)
 
 ALLOWED_STATUSES = ["Submitted", "Approved"]
 
+ALLOWED_PAYMENT_STATUSES = [
+    "Pending",
+    "Partial",
+    "Paid"
+]
+
 
 # GET ALL INVOICES
 @invoices_bp.route("/invoices", methods=["GET"])
@@ -19,20 +25,123 @@ def get_invoices():
             SELECT
                 invoices.id,
                 invoices.job_id,
+
                 jobs.job_name,
                 jobs.status AS job_status,
+
                 invoices.invoice_number,
+                invoices.invoice_date,
+                invoices.due_date,
                 invoices.amount,
-                invoices.status
+                invoices.status,
+                invoices.payment_status,
+                invoices.notes,
+                invoices.terms_conditions,
+
+                customers.id AS customer_id,
+                customers.company_name,
+                customers.contact_name,
+                customers.phone,
+                customers.email
+
             FROM invoices
+
             JOIN jobs
                 ON invoices.job_id = jobs.id
+
+            JOIN quotations
+                ON jobs.quotation_id = quotations.id
+
+            JOIN rfqs
+                ON quotations.rfq_id = rfqs.id
+
+            JOIN customers
+                ON rfqs.customer_id = customers.id
+
             ORDER BY invoices.id DESC
         """)
 
         invoices = cursor.fetchall()
 
         return jsonify(invoices), 200
+
+    except Exception as error:
+
+        print("Error fetching invoices:", error)
+
+        return jsonify({
+            "message": "Unable to load invoices."
+        }), 500
+
+    finally:
+        cursor.close()
+        connection.close()
+
+
+# GET SINGLE INVOICE
+@invoices_bp.route("/invoices/<int:invoice_id>", methods=["GET"])
+def get_invoice(invoice_id):
+
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        cursor.execute("""
+            SELECT
+                invoices.id,
+                invoices.job_id,
+
+                jobs.job_name,
+                jobs.status AS job_status,
+
+                invoices.invoice_number,
+                invoices.invoice_date,
+                invoices.due_date,
+                invoices.amount,
+                invoices.status,
+                invoices.payment_status,
+                invoices.notes,
+                invoices.terms_conditions,
+
+                customers.id AS customer_id,
+                customers.company_name,
+                customers.contact_name,
+                customers.phone,
+                customers.email
+
+            FROM invoices
+
+            JOIN jobs
+                ON invoices.job_id = jobs.id
+
+            JOIN quotations
+                ON jobs.quotation_id = quotations.id
+
+            JOIN rfqs
+                ON quotations.rfq_id = rfqs.id
+
+            JOIN customers
+                ON rfqs.customer_id = customers.id
+
+            WHERE invoices.id = %s
+        """, (invoice_id,))
+
+        invoice = cursor.fetchone()
+
+        if not invoice:
+            return jsonify({
+                "message": "Invoice not found."
+            }), 404
+
+        return jsonify(invoice), 200
+
+    except Exception as error:
+
+        print("Error fetching invoice:", error)
+
+        return jsonify({
+            "message": "Unable to load invoice."
+        }), 500
 
     finally:
         cursor.close()
@@ -47,10 +156,21 @@ def create_invoice():
 
     job_id = data.get("job_id")
     invoice_number = data.get("invoice_number")
+    invoice_date = data.get("invoice_date")
+    due_date = data.get("due_date")
     amount = data.get("amount")
     status = data.get("status", "Submitted")
+    payment_status = data.get(
+        "payment_status",
+        "Pending"
+    )
+    notes = data.get("notes")
+    terms_conditions = data.get(
+        "terms_conditions"
+    )
 
     # Validation
+
     if not job_id:
         return jsonify({
             "message": "Job is required."
@@ -68,6 +188,7 @@ def create_invoice():
 
     try:
         amount = float(amount)
+
     except (TypeError, ValueError):
         return jsonify({
             "message": "Invoice amount must be a valid number."
@@ -83,12 +204,18 @@ def create_invoice():
             "message": "Invalid invoice status."
         }), 400
 
+    if payment_status not in ALLOWED_PAYMENT_STATUSES:
+        return jsonify({
+            "message": "Invalid payment status."
+        }), 400
+
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
 
     try:
 
         # Check job
+
         cursor.execute("""
             SELECT
                 id,
@@ -108,6 +235,7 @@ def create_invoice():
         # No job-status restriction is applied here.
 
         # Prevent duplicate invoice for same job
+
         cursor.execute("""
             SELECT id
             FROM invoices
@@ -122,11 +250,14 @@ def create_invoice():
             }), 400
 
         # Prevent duplicate invoice number
+
         cursor.execute("""
             SELECT id
             FROM invoices
             WHERE invoice_number = %s
-        """, (invoice_number.strip(),))
+        """, (
+            invoice_number.strip(),
+        ))
 
         existing_number = cursor.fetchone()
 
@@ -135,19 +266,41 @@ def create_invoice():
                 "message": "Invoice number already exists."
             }), 400
 
+        # Insert invoice
+
         cursor.execute("""
             INSERT INTO invoices (
                 job_id,
                 invoice_number,
+                invoice_date,
+                due_date,
                 amount,
-                status
+                status,
+                payment_status,
+                notes,
+                terms_conditions
             )
-            VALUES (%s, %s, %s, %s)
+            VALUES (
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s
+            )
         """, (
             job_id,
             invoice_number.strip(),
+            invoice_date,
+            due_date,
             amount,
-            status
+            status,
+            payment_status,
+            notes,
+            terms_conditions
         ))
 
         connection.commit()
@@ -163,7 +316,10 @@ def create_invoice():
 
         connection.rollback()
 
-        print("Error creating invoice:", error)
+        print(
+            "Error creating invoice:",
+            error
+        )
 
         return jsonify({
             "message": "Unable to create invoice."
@@ -175,17 +331,30 @@ def create_invoice():
 
 
 # UPDATE INVOICE
-@invoices_bp.route("/invoices/<int:invoice_id>", methods=["PUT"])
+@invoices_bp.route(
+    "/invoices/<int:invoice_id>",
+    methods=["PUT"]
+)
 def update_invoice(invoice_id):
 
     data = request.get_json() or {}
 
     job_id = data.get("job_id")
     invoice_number = data.get("invoice_number")
+    invoice_date = data.get("invoice_date")
+    due_date = data.get("due_date")
     amount = data.get("amount")
     status = data.get("status")
+    payment_status = data.get(
+        "payment_status"
+    )
+    notes = data.get("notes")
+    terms_conditions = data.get(
+        "terms_conditions"
+    )
 
     # Validation
+
     if not job_id:
         return jsonify({
             "message": "Job is required."
@@ -203,6 +372,7 @@ def update_invoice(invoice_id):
 
     try:
         amount = float(amount)
+
     except (TypeError, ValueError):
         return jsonify({
             "message": "Invoice amount must be a valid number."
@@ -218,12 +388,18 @@ def update_invoice(invoice_id):
             "message": "Invalid invoice status."
         }), 400
 
+    if payment_status not in ALLOWED_PAYMENT_STATUSES:
+        return jsonify({
+            "message": "Invalid payment status."
+        }), 400
+
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
 
     try:
 
         # Check invoice
+
         cursor.execute("""
             SELECT id
             FROM invoices
@@ -238,8 +414,11 @@ def update_invoice(invoice_id):
             }), 404
 
         # Check job
+
         cursor.execute("""
-            SELECT id, status
+            SELECT
+                id,
+                status
             FROM jobs
             WHERE id = %s
         """, (job_id,))
@@ -254,12 +433,16 @@ def update_invoice(invoice_id):
         # Ongoing and Completed jobs are both allowed.
 
         # Prevent another invoice from using same job
+
         cursor.execute("""
             SELECT id
             FROM invoices
             WHERE job_id = %s
               AND id != %s
-        """, (job_id, invoice_id))
+        """, (
+            job_id,
+            invoice_id
+        ))
 
         duplicate_job_invoice = cursor.fetchone()
 
@@ -269,6 +452,7 @@ def update_invoice(invoice_id):
             }), 400
 
         # Prevent duplicate invoice number
+
         cursor.execute("""
             SELECT id
             FROM invoices
@@ -286,19 +470,31 @@ def update_invoice(invoice_id):
                 "message": "Invoice number already exists."
             }), 400
 
+        # Update invoice
+
         cursor.execute("""
             UPDATE invoices
             SET
                 job_id = %s,
                 invoice_number = %s,
+                invoice_date = %s,
+                due_date = %s,
                 amount = %s,
-                status = %s
+                status = %s,
+                payment_status = %s,
+                notes = %s,
+                terms_conditions = %s
             WHERE id = %s
         """, (
             job_id,
             invoice_number.strip(),
+            invoice_date,
+            due_date,
             amount,
             status,
+            payment_status,
+            notes,
+            terms_conditions,
             invoice_id
         ))
 
@@ -312,7 +508,10 @@ def update_invoice(invoice_id):
 
         connection.rollback()
 
-        print("Error updating invoice:", error)
+        print(
+            "Error updating invoice:",
+            error
+        )
 
         return jsonify({
             "message": "Unable to update invoice."
@@ -324,7 +523,10 @@ def update_invoice(invoice_id):
 
 
 # DELETE INVOICE
-@invoices_bp.route("/invoices/<int:invoice_id>", methods=["DELETE"])
+@invoices_bp.route(
+    "/invoices/<int:invoice_id>",
+    methods=["DELETE"]
+)
 def delete_invoice(invoice_id):
 
     connection = get_db_connection()
@@ -352,7 +554,10 @@ def delete_invoice(invoice_id):
 
         connection.rollback()
 
-        print("Error deleting invoice:", error)
+        print(
+            "Error deleting invoice:",
+            error
+        )
 
         return jsonify({
             "message": "Unable to delete invoice."

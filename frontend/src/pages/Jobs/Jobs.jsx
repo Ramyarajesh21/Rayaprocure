@@ -261,15 +261,15 @@ function Jobs() {
     });
 
     /*
-     * Only Approved quotations should normally
-     * move into the Job stage.
+     * Only Accepted quotations can move
+     * into the Job stage.
      *
      * During Edit, the quotation already connected
      * to the current job is also included.
      */
     const availableQuotations = quotations.filter(
         (quotation) =>
-            quotation.status === "Approved" ||
+            quotation.status === "Accepted" ||
             Number(quotation.id) ===
                 Number(formData.quotation_id)
     );

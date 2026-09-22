@@ -543,21 +543,37 @@ img {
     min-width: 700px;
 }
 
+
+/* =========================================================
+   GLOBAL TABLE HEADER
+   ALL PAGES — SAME THEME
+   ========================================================= */
+
 .vf-table thead {
-    background: var(--color-surface-soft);
+    background: var(--color-accent) !important;
+}
+
+.vf-table thead tr {
+    background: var(--color-accent) !important;
 }
 
 .vf-table th {
     padding: 14px 18px;
     text-align: left;
-    color: var(--color-text-muted);
+    background: var(--color-accent) !important;
+    color: #000000 !important;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.9px;
     text-transform: uppercase;
-    border-bottom: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--color-accent) !important;
     white-space: nowrap;
 }
+
+
+/* =========================================================
+   TABLE BODY
+   ========================================================= */
 
 .vf-table td {
     padding: 15px 18px;

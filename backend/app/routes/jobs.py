@@ -1,4 +1,3 @@
-
 from flask import Blueprint, request
 from app.db import get_db_connection
 
@@ -8,7 +7,9 @@ jobs_bp = Blueprint("jobs", __name__)
 ALLOWED_STATUSES = ["Ongoing", "Completed"]
 
 
+# ============================================================
 # GET ALL JOBS
+# ============================================================
 @jobs_bp.route("/jobs", methods=["GET"])
 def get_jobs():
 
@@ -20,20 +21,37 @@ def get_jobs():
             SELECT
                 jobs.id,
                 jobs.quotation_id,
+
                 quotations.description AS quotation_description,
+                quotations.amount AS quotation_amount,
+                quotations.subtotal AS quotation_subtotal,
+                quotations.adjustment AS quotation_adjustment,
+                quotations.grand_total AS quotation_grand_total,
                 quotations.status AS quotation_status,
+
                 rfqs.rfq_number,
+
+                customers.id AS customer_id,
                 customers.company_name,
+                customers.contact_name,
+                customers.phone,
+                customers.email,
+
                 jobs.job_name,
                 jobs.start_date,
                 jobs.status
+
             FROM jobs
+
             JOIN quotations
                 ON jobs.quotation_id = quotations.id
+
             JOIN rfqs
                 ON quotations.rfq_id = rfqs.id
+
             JOIN customers
                 ON rfqs.customer_id = customers.id
+
             ORDER BY jobs.id DESC
         """)
 
@@ -41,12 +59,21 @@ def get_jobs():
 
         return jobs, 200
 
+    except Exception as error:
+        print("Error fetching jobs:", error)
+
+        return {
+            "message": "Unable to fetch jobs."
+        }, 500
+
     finally:
         cursor.close()
         connection.close()
 
 
+# ============================================================
 # GET SINGLE JOB
+# ============================================================
 @jobs_bp.route("/jobs/<int:id>", methods=["GET"])
 def get_job(id):
 
@@ -58,20 +85,37 @@ def get_job(id):
             SELECT
                 jobs.id,
                 jobs.quotation_id,
+
                 quotations.description AS quotation_description,
+                quotations.amount AS quotation_amount,
+                quotations.subtotal AS quotation_subtotal,
+                quotations.adjustment AS quotation_adjustment,
+                quotations.grand_total AS quotation_grand_total,
                 quotations.status AS quotation_status,
+
                 rfqs.rfq_number,
+
+                customers.id AS customer_id,
                 customers.company_name,
+                customers.contact_name,
+                customers.phone,
+                customers.email,
+
                 jobs.job_name,
                 jobs.start_date,
                 jobs.status
+
             FROM jobs
+
             JOIN quotations
                 ON jobs.quotation_id = quotations.id
+
             JOIN rfqs
                 ON quotations.rfq_id = rfqs.id
+
             JOIN customers
                 ON rfqs.customer_id = customers.id
+
             WHERE jobs.id = %s
         """, (id,))
 
@@ -84,12 +128,21 @@ def get_job(id):
             "message": "Job not found"
         }, 404
 
+    except Exception as error:
+        print("Error fetching job:", error)
+
+        return {
+            "message": "Unable to fetch job."
+        }, 500
+
     finally:
         cursor.close()
         connection.close()
 
 
+# ============================================================
 # POST - ADD JOB
+# ============================================================
 @jobs_bp.route("/jobs", methods=["POST"])
 def add_job():
 
@@ -125,6 +178,7 @@ def add_job():
     cursor = connection.cursor(dictionary=True)
 
     try:
+
         # Check quotation
         cursor.execute("""
             SELECT id, status
@@ -139,10 +193,10 @@ def add_job():
                 "message": "Quotation not found."
             }, 404
 
-        # Only Approved quotation can become a Job
-        if quotation["status"] != "Approved":
+        # Only Accepted quotation can become a Job
+        if quotation["status"] != "Accepted":
             return {
-                "message": "Only an Approved quotation can be converted into a job."
+                "message": "Only an Accepted quotation can be converted into a job."
             }, 400
 
         # Prevent the same quotation from creating multiple jobs
@@ -161,7 +215,12 @@ def add_job():
 
         cursor.execute("""
             INSERT INTO jobs
-            (quotation_id, job_name, start_date, status)
+            (
+                quotation_id,
+                job_name,
+                start_date,
+                status
+            )
             VALUES (%s, %s, %s, %s)
         """, (
             quotation_id,
@@ -191,7 +250,9 @@ def add_job():
         connection.close()
 
 
+# ============================================================
 # PUT - UPDATE JOB
+# ============================================================
 @jobs_bp.route("/jobs/<int:id>", methods=["PUT"])
 def update_job(id):
 
@@ -227,6 +288,7 @@ def update_job(id):
     cursor = connection.cursor(dictionary=True)
 
     try:
+
         # Check existing job
         cursor.execute("""
             SELECT id
@@ -255,10 +317,10 @@ def update_job(id):
                 "message": "Quotation not found."
             }, 404
 
-        # Quotation must be Approved
-        if quotation["status"] != "Approved":
+        # Quotation must be Accepted
+        if quotation["status"] != "Accepted":
             return {
-                "message": "Only an Approved quotation can be linked to a job."
+                "message": "Only an Accepted quotation can be linked to a job."
             }, 400
 
         # Prevent another job from using the same quotation
@@ -278,7 +340,8 @@ def update_job(id):
 
         cursor.execute("""
             UPDATE jobs
-            SET quotation_id = %s,
+            SET
+                quotation_id = %s,
                 job_name = %s,
                 start_date = %s,
                 status = %s
@@ -311,7 +374,9 @@ def update_job(id):
         connection.close()
 
 
+# ============================================================
 # DELETE - DELETE JOB
+# ============================================================
 @jobs_bp.route("/jobs/<int:id>", methods=["DELETE"])
 def delete_job(id):
 
@@ -319,6 +384,7 @@ def delete_job(id):
     cursor = connection.cursor()
 
     try:
+
         cursor.execute(
             "DELETE FROM jobs WHERE id = %s",
             (id,)
