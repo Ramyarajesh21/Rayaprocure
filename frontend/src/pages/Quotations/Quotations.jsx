@@ -3,6 +3,7 @@ import "./Quotations.css";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
+import { downloadExcel } from "../../utils/exportExcel";
 
 import MainLayout from "../../layouts/MainLayout";
 import PageHeader from "../../components/PageHeader";
@@ -294,17 +295,10 @@ function Quotations() {
                     title="Quotations"
                     description="Create, manage and track customer quotations."
 
-                    action={
-
-                        <Button
-                            onClick={
-                                openCreateQuotation
-                            }
-                        >
-                            + Create Quotation
-                        </Button>
-
-                    }
+                    action={<>
+                        <Button variant="gold" onClick={() => downloadExcel("quotations", quotations)}>Download Excel</Button>
+                        <Button onClick={openCreateQuotation}>+ Create Quotation</Button>
+                    </>}
                 />
 
 

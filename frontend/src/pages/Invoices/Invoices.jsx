@@ -10,6 +10,7 @@ import StatusBadge from "../../components/StatusBadge";
 import { useToast } from "../../components/Toast/ToastContext";
 
 import api from "../../services/api";
+import { downloadExcel } from "../../utils/exportExcel";
 import "./Invoices.css";
 
 
@@ -285,16 +286,10 @@ function Invoices() {
 
                     description="Manage invoices raised against completed and ongoing jobs."
 
-                    action={
-
-                        <Button
-                            variant="gold"
-                            onClick={openCreateInvoice}
-                        >
-                            + Create Invoice
-                        </Button>
-
-                    }
+                    action={<>
+                        <Button variant="gold" onClick={() => downloadExcel("invoices", invoices)}>Download Excel</Button>
+                        <Button variant="gold" onClick={openCreateInvoice}>+ Create Invoice</Button>
+                    </>}
                 />
 
 

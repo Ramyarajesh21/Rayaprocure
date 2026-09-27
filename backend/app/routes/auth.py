@@ -12,7 +12,9 @@ def login():
 
     data = request.get_json() or {}
 
-    username = data.get("username")
+    # Accept both field names so older clients that call the username field
+    # "email" remain compatible with this username based accounts table.
+    username = data.get("username") or data.get("email")
     password = data.get("password")
 
     if not username or not password:
@@ -29,10 +31,10 @@ def login():
             """
             SELECT id, name, username, role
             FROM users
-            WHERE username = %s
+            WHERE LOWER(TRIM(username)) = LOWER(%s)
               AND password = %s
             """,
-            (username, password)
+            (username.strip(), password)
         )
 
         user = cursor.fetchone()
@@ -156,7 +158,16 @@ def change_password():
         # -------------------------------------------------
         # CURRENT PASSWORD CHECK
         # -------------------------------------------------
-        if user.get("password") != current_password:
+        # Use the same database comparison as login. MySQL column collations
+        # can be case-insensitive, while comparing the fetched value in Python
+        # is always case-sensitive; that mismatch made accepted login passwords
+        # fail here.
+        cursor.execute(
+            "SELECT id FROM users WHERE id = %s AND password = %s LIMIT 1",
+            (user["id"], current_password)
+        )
+
+        if not cursor.fetchone():
             return {
                 "message": "Current password is incorrect."
             }, 401

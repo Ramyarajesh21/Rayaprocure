@@ -54,7 +54,7 @@ function Dashboard() {
     const fetchDashboard = async () => {
         try {
             const response = await axios.get(
-                "http://127.0.0.1:5000/dashboard"
+                "http://127.0.0.1:5001/dashboard"
             );
 
             setDashboardData(response.data);

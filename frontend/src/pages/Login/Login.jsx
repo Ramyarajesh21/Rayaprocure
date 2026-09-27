@@ -32,9 +32,10 @@ function Login() {
         try {
 
             const response = await axios.post(
-                "http://127.0.0.1:5000/api/auth/login",
+                "http://127.0.0.1:5001/api/auth/login",
                 {
                     username: username.trim(),
+                    email: username.trim(),
                     password: password
                 }
             );

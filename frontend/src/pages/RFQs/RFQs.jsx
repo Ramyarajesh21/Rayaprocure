@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
+import { downloadExcel } from "../../utils/exportExcel";
 
 import MainLayout from "../../layouts/MainLayout";
 import PageHeader from "../../components/PageHeader";
@@ -481,13 +482,10 @@ function RFQs() {
                 eyebrow="PROCUREMENT"
                 title="Requests for Quotation"
                 description="Manage customer RFQs and track incoming work requirements."
-                action={
-                    <Button
-                        onClick={openCreateForm}
-                    >
-                        + Create RFQ
-                    </Button>
-                }
+                action={<>
+                    <Button variant="gold" onClick={() => downloadExcel("rfqs", rfqs)}>Download Excel</Button>
+                    <Button onClick={openCreateForm}>+ Create RFQ</Button>
+                </>}
             />
 
 

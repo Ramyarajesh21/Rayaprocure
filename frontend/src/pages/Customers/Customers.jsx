@@ -10,6 +10,7 @@ import Modal from "../../components/Modal";
 import { useToast } from "../../components/Toast/ToastContext";
 
 import api from "../../services/api";
+import { downloadExcel } from "../../utils/exportExcel";
 
 import "./Customers.css";
 
@@ -282,14 +283,10 @@ function Customers() {
                     eyebrow="CUSTOMERS"
                     title="Customers"
                     description="Manage your customer companies and business relationships."
-                    action={
-                        <Button
-                            variant="gold"
-                            onClick={openAddModal}
-                        >
-                            + Add Customer
-                        </Button>
-                    }
+                    action={<>
+                        <Button variant="gold" onClick={() => downloadExcel("customers", customers)}>Download Excel</Button>
+                        <Button variant="gold" onClick={openAddModal}>+ Add Customer</Button>
+                    </>}
                 />
 
                 <div className="customers-toolbar">

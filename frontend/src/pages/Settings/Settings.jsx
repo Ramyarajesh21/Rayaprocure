@@ -1,6 +1,7 @@
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import api from "../../services/api";
 import MainLayout from "../../layouts/MainLayout";
 import PageHeader from "../../components/PageHeader";
 import "./Settings.css";
@@ -504,9 +505,9 @@ function Settings() {
 
             const response =
                 await axios.post(
-                    "http://127.0.0.1:5000/api/auth/change-password",
+                    `${api.defaults.baseURL}/api/auth/change-password`,
                     {
-                        username: username,
+                        username: username.trim(),
                         role: userRole,
                         currentPassword: currentPassword,
                         newPassword: newPassword
