@@ -31,7 +31,7 @@ def password_matches(stored_password, supplied_password):
 @rate_limit("login-user", 8, 600, key_func=lambda: (request.get_json(silent=True) or {}).get("username", "").strip().lower())
 def login():
     data = request.get_json() or {}
-    username = (data.get("username") or "").strip()
+    username = (data.get("username") or data.get("email") or "").strip()
     password = data.get("password") or ""
 
     if not username or not password:
@@ -50,7 +50,7 @@ def login():
                    tenants.name AS tenant_name
             FROM users
             JOIN tenants ON tenants.id = users.tenant_id
-            WHERE users.username = %s
+            WHERE LOWER(TRIM(users.username)) = LOWER(%s)
             LIMIT 1
             """,
             (username,),

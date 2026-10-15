@@ -10,6 +10,7 @@ import Modal from "../../components/Modal";
 import { useToast } from "../../components/Toast/ToastContext";
 
 import api from "../../services/api";
+import { downloadExcel } from "../../utils/exportExcel";
 
 import "./Payments.css";
 
@@ -312,14 +313,10 @@ function Payments() {
                     eyebrow="PAYMENTS"
                     title="Payments"
                     description="Track payments received against customer invoices."
-                    action={
-                        <Button
-                            variant="gold"
-                            onClick={openAddModal}
-                        >
-                            + Add Payment
-                        </Button>
-                    }
+                    action={<>
+                        <Button variant="gold" onClick={() => downloadExcel("payments", payments)}>Download Excel</Button>
+                        <Button variant="gold" onClick={openAddModal}>+ Add Payment</Button>
+                    </>}
                 />
 
                 <div className="vf-page-toolbar">
