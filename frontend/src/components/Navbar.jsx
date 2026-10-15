@@ -1,5 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { FiBell, FiChevronDown, FiLogOut } from "react-icons/fi";
+import api from "../services/api";
 import "./Navbar.css";
 
 function Navbar() {
@@ -7,6 +9,8 @@ function Navbar() {
     const navigate = useNavigate();
 
     const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [notifications, setNotifications] = useState([]);
 
     const storedUser = localStorage.getItem("vendorflowUser");
     const user = storedUser ? JSON.parse(storedUser) : null;
@@ -26,15 +30,40 @@ function Navbar() {
         if (path.startsWith("/payments")) return "Payments";
         if (path.startsWith("/reports")) return "Reports";
         if (path.startsWith("/settings")) return "Settings";
+        if (path.startsWith("/team")) return "Team & Access";
+        if (path.startsWith("/company")) return "Company Profile";
+        if (path.startsWith("/audit")) return "Audit History";
+        if (path.startsWith("/catalog")) return "Products & Services";
+        if (path.startsWith("/templates")) return "Document Templates";
+        if (path.startsWith("/automation")) return "Email & Reminders";
         if (path.startsWith("/about")) return "About";
 
         return "Dashboard";
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        try {
+            await api.post("/api/auth/logout");
+        } catch (error) {
+            console.warn("Unable to end the server session:", error);
+        }
         localStorage.removeItem("vendorflowUser");
         localStorage.removeItem("vendorflowRole");
         navigate("/login");
+    };
+
+    const loadNotifications = async () => {
+        try { setNotifications((await api.get("/api/notifications")).data); } catch { /* notifications are non-blocking */ }
+    };
+
+    useEffect(() => { loadNotifications(); }, []);
+    const unreadCount = notifications.filter((item) => !item.is_read).length;
+
+    const openNotification = async (item) => {
+        if (!item.is_read) await api.put(`/api/notifications/${item.id}/read`);
+        setNotifications((items) => items.map((entry) => entry.id === item.id ? { ...entry, is_read: true } : entry));
+        setShowNotifications(false);
+        if (item.link_path) navigate(item.link_path);
     };
 
     return (
@@ -76,17 +105,14 @@ function Navbar() {
                 </div>
 
                 {/* NOTIFICATION */}
-                <button
-                    type="button"
-                    className="notification-button"
-                    aria-label="Notifications"
-                >
-                    <span className="notification-icon">
-                        ♧
-                    </span>
+                <div className="notification-wrapper">
+                <button type="button" className="notification-button" aria-label="Notifications" onClick={() => { setShowNotifications(!showNotifications); loadNotifications(); }}>
+                    <FiBell className="notification-icon" aria-hidden="true" />
 
-                    <span className="notification-dot"></span>
+                    {unreadCount > 0 && <span className="notification-dot"></span>}
                 </button>
+                {showNotifications && <div className="notification-menu"><strong>Notifications</strong>{notifications.length ? notifications.slice(0, 6).map((item) => <button key={item.id} className={item.is_read ? "notification-item" : "notification-item unread"} onClick={() => openNotification(item)}><b>{item.title}</b><span>{item.message}</span></button>) : <p>No notifications yet.</p>}</div>}
+                </div>
 
                 {/* PROFILE */}
                 <div className="profile-wrapper">
@@ -106,9 +132,7 @@ function Navbar() {
                             {userName}
                         </span>
 
-                        <span className="profile-chevron">
-                            ▾
-                        </span>
+                        <FiChevronDown className="profile-chevron" aria-hidden="true" />
                     </button>
 
                     {/* PROFILE DROPDOWN */}
@@ -145,7 +169,7 @@ function Navbar() {
                     aria-label="Logout"
                     title="Logout"
                 >
-                    ↪
+                    <FiLogOut aria-hidden="true" />
                 </button>
 
             </div>

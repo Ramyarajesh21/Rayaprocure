@@ -4,26 +4,33 @@ import {
     Route,
     Navigate,
 } from "react-router-dom";
+import { lazy, Suspense } from "react";
 
-import Login from "../pages/Login/Login";
-import Dashboard from "../pages/Dashboard/Dashboard";
-import Customers from "../pages/Customers/Customers";
-import RFQs from "../pages/RFQs/RFQs";
-import Quotations from "../pages/Quotations/Quotations";
-import CreateQuotation from "../pages/Quotations/CreateQuotation";
-import QuotationPreview from "../pages/Quotations/QuotationPreview";
-import Jobs from "../pages/Jobs/Jobs";
-
-import Invoices from "../pages/Invoices/Invoices";
-import CreateInvoice from "../pages/Invoices/CreateInvoice";
-import InvoicePreview from "../pages/Invoices/InvoicePreview";
-
-import Payments from "../pages/Payments/Payments";
-import Reports from "../pages/Reports/Reports";
-import Settings from "../pages/Settings/Settings";
-import About from "../pages/About/About";
+const Login = lazy(() => import("../pages/Login/Login"));
+const Dashboard = lazy(() => import("../pages/Dashboard/Dashboard"));
+const Customers = lazy(() => import("../pages/Customers/Customers"));
+const RFQs = lazy(() => import("../pages/RFQs/RFQs"));
+const Quotations = lazy(() => import("../pages/Quotations/Quotations"));
+const CreateQuotation = lazy(() => import("../pages/Quotations/CreateQuotation"));
+const QuotationPreview = lazy(() => import("../pages/Quotations/QuotationPreview"));
+const Jobs = lazy(() => import("../pages/Jobs/Jobs"));
+const Invoices = lazy(() => import("../pages/Invoices/Invoices"));
+const CreateInvoice = lazy(() => import("../pages/Invoices/CreateInvoice"));
+const InvoicePreview = lazy(() => import("../pages/Invoices/InvoicePreview"));
+const Payments = lazy(() => import("../pages/Payments/Payments"));
+const Reports = lazy(() => import("../pages/Reports/Reports"));
+const Settings = lazy(() => import("../pages/Settings/Settings"));
+const About = lazy(() => import("../pages/About/About"));
+const Users = lazy(() => import("../pages/Users/Users"));
+const Company = lazy(() => import("../pages/Company/Company"));
+const Audit = lazy(() => import("../pages/Audit/Audit"));
+const Catalog = lazy(() => import("../pages/Catalog/Catalog"));
+const Templates = lazy(() => import("../pages/Templates/Templates"));
+const EmailReminders = lazy(() => import("../pages/Automation/EmailReminders"));
+const Portal = lazy(() => import("../pages/Portal/Portal"));
 
 import ProtectedRoute from "./ProtectedRoute";
+import RouteLoading from "../components/RouteLoading";
 
 
 function AppRoutes() {
@@ -31,6 +38,7 @@ function AppRoutes() {
     return (
         <BrowserRouter>
 
+            <Suspense fallback={<RouteLoading />}>
             <Routes>
 
                 {/* =====================================================
@@ -327,6 +335,23 @@ function AppRoutes() {
                     }
                 />
 
+                <Route
+                    path="/team"
+                    element={
+                        <ProtectedRoute roles={["Owner"]}>
+                            <Users />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route path="/company" element={<ProtectedRoute roles={["Owner"]}><Company /></ProtectedRoute>} />
+                <Route path="/audit" element={<ProtectedRoute roles={["Owner"]}><Audit /></ProtectedRoute>} />
+                <Route path="/catalog" element={<ProtectedRoute roles={["Owner", "Accounts", "Operations"]}><Catalog /></ProtectedRoute>} />
+                <Route path="/templates" element={<ProtectedRoute roles={["Owner"]}><Templates /></ProtectedRoute>} />
+                <Route path="/automation" element={<ProtectedRoute roles={["Owner"]}><EmailReminders /></ProtectedRoute>} />
+
+                {/* Public customer link: no login */}
+                <Route path="/p/:token" element={<Portal />} />
+
 
                 {/* =====================================================
                     ABOUT
@@ -363,6 +388,7 @@ function AppRoutes() {
                 />
 
             </Routes>
+            </Suspense>
 
         </BrowserRouter>
     );

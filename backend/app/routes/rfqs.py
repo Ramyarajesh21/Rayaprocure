@@ -1,8 +1,18 @@
 from flask import Blueprint, request, jsonify
 from app.db import get_db_connection
+from app.numbering import next_document_number
+from app.security import tenant_id
 
 
 rfqs_bp = Blueprint("rfqs", __name__)
+
+
+def customer_in_tenant(cursor, customer_id):
+    cursor.execute(
+        "SELECT 1 FROM customers WHERE id = %s AND tenant_id = %s",
+        (customer_id, tenant_id()),
+    )
+    return cursor.fetchone() is not None
 
 
 # =========================================================
@@ -28,8 +38,9 @@ def get_rfqs():
         FROM rfqs r
         JOIN customers c
             ON r.customer_id = c.id
+        WHERE r.tenant_id = %s
         ORDER BY r.id DESC
-    """)
+    """, (tenant_id(),))
 
     rfqs = cursor.fetchall()
 
@@ -50,7 +61,7 @@ def create_rfq():
     customer_id = data.get("customer_id")
     request_date = data.get("request_date")
     required_date = data.get("required_date")
-    purpose = data.get("purpose")
+    purpose = data.get("purpose") or ""
     description = data.get("description")
     status = data.get("status", "New")
 
@@ -62,17 +73,19 @@ def create_rfq():
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    cursor.execute("""
-        SELECT COUNT(*) + 1
-        FROM rfqs
-    """)
+    if not customer_in_tenant(cursor, customer_id):
+        cursor.close()
+        connection.close()
+        return jsonify({"message": "Customer not found."}), 404
 
-    next_number = cursor.fetchone()[0]
-
-    rfq_number = f"RFQ-{next_number:03d}"
+    cursor.execute("SELECT rfq_prefix FROM company_settings WHERE tenant_id = %s", (tenant_id(),))
+    settings = cursor.fetchone()
+    prefix = (settings[0] if settings and settings[0] else "RFQ-")
+    rfq_number = next_document_number(cursor, tenant_id(), "rfqs", "rfq_number", prefix, 3)
 
     cursor.execute("""
         INSERT INTO rfqs (
+            tenant_id,
             customer_id,
             rfq_number,
             request_date,
@@ -81,8 +94,9 @@ def create_rfq():
             description,
             status
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """, (
+        tenant_id(),
         customer_id,
         rfq_number,
         request_date,
@@ -117,7 +131,7 @@ def update_rfq(rfq_id):
     customer_id = data.get("customer_id")
     request_date = data.get("request_date")
     required_date = data.get("required_date")
-    purpose = data.get("purpose")
+    purpose = data.get("purpose") or ""
     description = data.get("description")
     status = data.get("status", "New")
 
@@ -129,6 +143,11 @@ def update_rfq(rfq_id):
     connection = get_db_connection()
     cursor = connection.cursor()
 
+    if not customer_in_tenant(cursor, customer_id):
+        cursor.close()
+        connection.close()
+        return jsonify({"message": "Customer not found."}), 404
+
     cursor.execute("""
         UPDATE rfqs
         SET
@@ -138,7 +157,7 @@ def update_rfq(rfq_id):
             purpose = %s,
             description = %s,
             status = %s
-        WHERE id = %s
+        WHERE id = %s AND tenant_id = %s
     """, (
         customer_id,
         request_date,
@@ -146,7 +165,8 @@ def update_rfq(rfq_id):
         purpose,
         description,
         status,
-        rfq_id
+        rfq_id,
+        tenant_id()
     ))
 
     if cursor.rowcount == 0:
@@ -178,8 +198,8 @@ def delete_rfq(rfq_id):
 
     cursor.execute("""
         DELETE FROM rfqs
-        WHERE id = %s
-    """, (rfq_id,))
+        WHERE id = %s AND tenant_id = %s
+    """, (rfq_id, tenant_id()))
 
     if cursor.rowcount == 0:
         cursor.close()

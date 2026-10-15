@@ -1,212 +1,28 @@
-import React, {
-    useEffect,
-    useMemo,
-    useState,
-} from "react";
-
-import {
-    useNavigate,
-    useSearchParams,
-} from "react-router-dom";
-
-import api from "../../services/api";
-import MainLayout from "../../layouts/MainLayout";
-import PageHeader from "../../components/PageHeader";
-import Button from "../../components/Button";
-import { useToast } from "../../components/Toast/ToastContext";
-
 import "../Quotations/Quotations.css";
 import "./Invoices.css";
 
-const DEFAULT_NOTES =
-    "Thank you for your business. Please contact us if you have any questions regarding this invoice.";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
-const DEFAULT_TERMS =
-    "Payment is due on or before the due date mentioned above. Please retain this invoice for your records.";
+import api from "../../services/api";
+import { useCompany, useStates } from "../../services/company";
 
-const formatCurrency = (value) => {
-    const amount = Number(value || 0);
+import MainLayout from "../../layouts/MainLayout";
+import PageHeader from "../../components/PageHeader";
+import Button from "../../components/Button";
+import LineItemsEditor from "../../components/LineItemsEditor";
+import { useToast } from "../../components/Toast/ToastContext";
 
-    return new Intl.NumberFormat("en-IN", {
-        style: "currency",
-        currency: "INR",
-        maximumFractionDigits: 2,
-    }).format(amount);
-};
+import { errorMessage, todayISO } from "../../utils/format";
+import {
+    blankItem,
+    determineSupply,
+    itemsFromApi,
+    itemsToApi,
+    validateItems,
+} from "../../utils/gst";
 
-const getToday = () => {
-    const date = new Date();
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-};
-
-const getDefaultDueDate = (dateString) => {
-    const date = new Date(`${dateString}T00:00:00`);
-
-    date.setDate(date.getDate() + 10);
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-};
-
-const getNextInvoiceNumber = (invoices = []) => {
-    let highestNumber = 0;
-
-    invoices.forEach((invoice) => {
-        const invoiceNumber = String(
-            invoice?.invoice_number || ""
-        ).trim();
-
-        const match = invoiceNumber.match(/INV-(\d+)/i);
-
-        if (match) {
-            highestNumber = Math.max(
-                highestNumber,
-                Number(match[1])
-            );
-        }
-    });
-
-    return `INV-${String(highestNumber + 1).padStart(5, "0")}`;
-};
-
-const createEmptyItem = () => ({
-    id: `${Date.now()}-${Math.random()}`,
-    description: "",
-    quantity: "1",
-    unit: "Job",
-    rate: "0",
-});
-
-/*
- * ============================================================
- * CUSTOMER HELPERS
- * ============================================================
- */
-
-const getCustomerIdFromJob = (job) => {
-    return (
-        job?.customer_id ||
-        job?.customer?.id ||
-        job?.customer_details?.id ||
-        job?.company_id ||
-        job?.company?.id ||
-        null
-    );
-};
-
-const getCustomerFromJob = (job, customers = []) => {
-    if (!job) {
-        return null;
-    }
-
-    const embeddedCustomer =
-        job.customer ||
-        job.customer_details ||
-        job.company ||
-        null;
-
-    const customerId = getCustomerIdFromJob(job);
-
-    const loadedCustomer = customerId
-        ? customers.find(
-            (customer) =>
-                String(customer?.id) ===
-                String(customerId)
-        )
-        : null;
-
-    return loadedCustomer || embeddedCustomer || null;
-};
-
-const normalizeCustomer = (customer, job = null) => {
-    if (!customer && !job) {
-        return null;
-    }
-
-    return {
-        id:
-            customer?.id ||
-            getCustomerIdFromJob(job),
-
-        company_name:
-            customer?.company_name ||
-            customer?.company ||
-            customer?.name ||
-            job?.customer_name ||
-            job?.company_name ||
-            job?.company?.company_name ||
-            job?.company?.name ||
-            job?.customer?.company_name ||
-            job?.customer?.name ||
-            "Customer Company",
-
-        contact_name:
-            customer?.contact_name ||
-            customer?.contact_person ||
-            customer?.contact ||
-            job?.contact_name ||
-            job?.customer?.contact_name ||
-            job?.company?.contact_name ||
-            "",
-
-        address:
-            customer?.address ||
-            customer?.billing_address ||
-            customer?.bill_to_address ||
-            job?.customer?.address ||
-            job?.customer?.billing_address ||
-            job?.company?.address ||
-            job?.company?.billing_address ||
-            job?.billing_address ||
-            "",
-
-        city:
-            customer?.city ||
-            job?.customer?.city ||
-            job?.company?.city ||
-            "",
-
-        state:
-            customer?.state ||
-            job?.customer?.state ||
-            job?.company?.state ||
-            "",
-
-        pincode:
-            customer?.pincode ||
-            customer?.postal_code ||
-            customer?.zip_code ||
-            job?.customer?.pincode ||
-            job?.company?.pincode ||
-            "",
-
-        phone:
-            customer?.phone ||
-            customer?.mobile ||
-            customer?.contact_number ||
-            job?.customer?.phone ||
-            job?.customer?.mobile ||
-            job?.company?.phone ||
-            job?.company?.mobile ||
-            "",
-
-        email:
-            customer?.email ||
-            job?.customer?.email ||
-            job?.company?.email ||
-            "",
-    };
-};
-
-const CreateInvoice = () => {
+function CreateInvoice() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { showToast } = useToast();
@@ -214,1480 +30,344 @@ const CreateInvoice = () => {
     const editInvoiceId = searchParams.get("edit");
     const isEditMode = Boolean(editInvoiceId);
 
-    const [jobs, setJobs] = useState([]);
-    const [customers, setCustomers] = useState([]);
-    const [invoices, setInvoices] = useState([]);
+    const company = useCompany();
+    const states = useStates();
 
+    const [jobs, setJobs] = useState([]);
+    const [invoices, setInvoices] = useState([]);
+    const [customers, setCustomers] = useState([]);
+    const [catalog, setCatalog] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
-    const [error, setError] = useState("");
-    const [successMessage, setSuccessMessage] = useState("");
-
-    const [items, setItems] = useState([
-        {
-            id: "initial-item",
-            description: "",
-            quantity: "1",
-            unit: "Job",
-            rate: "0",
-        },
-    ]);
-
-    const [formData, setFormData] = useState({
-        job_id: "",
+    const [form, setForm] = useState({
+        job_id: searchParams.get("job") || "",
         invoice_number: "",
-        invoice_date: getToday(),
-        due_date: getDefaultDueDate(getToday()),
+        invoice_date: todayISO(),
+        due_date: "",
+        place_of_supply: "",
         adjustment: "0",
-        payment_status: "Pending",
-        notes: DEFAULT_NOTES,
-        terms_conditions: DEFAULT_TERMS,
+        reverse_charge: false,
+        milestone_label: "",
+        notes: "",
+        terms_conditions: "",
     });
+    const [items, setItems] = useState([blankItem()]);
+    const [percent, setPercent] = useState("100");
+    const [billing, setBilling] = useState(null);
 
-    /*
-     * ============================================================
-     * LOAD DATA
-     * ============================================================
-     */
+    const setField = (name, value) => setForm((previous) => ({ ...previous, [name]: value }));
+
+    // Fill the form from the job's accepted quotation.
+    const applyDraft = async (jobId, billPercent = "100") => {
+        if (!jobId) return;
+        try {
+            const { data } = await api.get(`/invoices/draft/${jobId}`, { params: { percent: billPercent } });
+            setBilling({
+                quoteTotal: data.quote_total,
+                billed: data.billed_so_far,
+                remaining: data.remaining,
+                count: data.invoice_count,
+            });
+            setForm((previous) => ({
+                ...previous,
+                job_id: String(jobId),
+                invoice_number: data.invoice_number,
+                invoice_date: data.invoice_date,
+                due_date: data.due_date,
+                place_of_supply: data.place_of_supply || "",
+                adjustment: String(data.adjustment ?? 0),
+                milestone_label: data.milestone_label || "",
+                notes: data.notes || "",
+                terms_conditions: data.terms_conditions || "",
+            }));
+            setItems(itemsFromApi(data.items));
+        } catch (error) {
+            showToast(errorMessage(error, "Unable to prepare the invoice from this job."), "error");
+        }
+    };
 
     useEffect(() => {
-        const loadData = async () => {
+        let active = true;
+        const load = async () => {
             try {
-                setLoading(true);
-                setError("");
-
-                const [
-                    jobsResponse,
-                    invoicesResponse,
-                    customersResponse,
-                ] = await Promise.all([
+                const requests = [
                     api.get("/jobs"),
                     api.get("/invoices"),
                     api.get("/customers"),
-                ]);
+                    api.get("/api/catalog"),
+                ];
+                if (isEditMode) requests.push(api.get(`/invoices/${editInvoiceId}`));
+                const [jobsResponse, invoicesResponse, customersResponse, catalogResponse, invoiceResponse] =
+                    await Promise.all(requests);
+                if (!active) return;
 
-                const jobsData =
-                    Array.isArray(jobsResponse.data)
-                        ? jobsResponse.data
-                        : jobsResponse.data?.jobs || [];
+                setJobs(jobsResponse.data || []);
+                setInvoices(invoicesResponse.data || []);
+                setCustomers(customersResponse.data || []);
+                setCatalog((catalogResponse.data || []).filter((entry) => entry.is_active));
 
-                const invoicesData =
-                    Array.isArray(invoicesResponse.data)
-                        ? invoicesResponse.data
-                        : invoicesResponse.data?.invoices || [];
-
-                const customersData =
-                    Array.isArray(customersResponse.data)
-                        ? customersResponse.data
-                        : customersResponse.data?.customers || [];
-
-                setJobs(jobsData);
-                setInvoices(invoicesData);
-                setCustomers(customersData);
-
-                if (isEditMode) {
-                    const invoiceResponse =
-                        await api.get(
-                            `/invoices/${editInvoiceId}`
-                        );
-
-                    const invoice =
-                        invoiceResponse.data?.invoice ||
-                        invoiceResponse.data;
-
-                    const relatedJob =
-                        jobsData.find(
-                            (job) =>
-                                String(job.id) ===
-                                String(invoice?.job_id)
-                        ) || null;
-
-                    const existingDescription =
-                        invoice?.description ||
-                        relatedJob?.job_name ||
-                        relatedJob?.name ||
-                        relatedJob?.quotation_description ||
-                        "Job Service";
-
-                    setFormData({
-                        job_id: invoice?.job_id
-                            ? String(invoice.job_id)
-                            : "",
-
-                        invoice_number:
-                            invoice?.invoice_number ||
-                            getNextInvoiceNumber(
-                                invoicesData
-                            ),
-
-                        invoice_date:
-                            invoice?.invoice_date ||
-                            getToday(),
-
-                        due_date:
-                            invoice?.due_date ||
-                            getDefaultDueDate(
-                                invoice?.invoice_date ||
-                                getToday()
-                            ),
-
-                        adjustment:
-                            invoice?.adjustment ??
-                            "0",
-
-                        payment_status:
-                            invoice?.payment_status ||
-                            "Pending",
-
-                        notes:
-                            invoice?.notes ||
-                            DEFAULT_NOTES,
-
-                        terms_conditions:
-                            invoice?.terms_conditions ||
-                            DEFAULT_TERMS,
+                if (invoiceResponse) {
+                    const invoice = invoiceResponse.data;
+                    setForm({
+                        job_id: String(invoice.job_id),
+                        invoice_number: invoice.invoice_number,
+                        invoice_date: invoice.invoice_date || todayISO(),
+                        due_date: invoice.due_date || "",
+                        place_of_supply: invoice.place_of_supply || "",
+                        adjustment: String(invoice.adjustment ?? 0),
+                        reverse_charge: Boolean(invoice.reverse_charge),
+                        milestone_label: invoice.milestone_label || "",
+                        notes: invoice.notes || "",
+                        terms_conditions: invoice.terms_conditions || "",
                     });
-
-                    setItems([
-                        {
-                            id: "existing-item",
-                            description:
-                                existingDescription,
-
-                            quantity:
-                                invoice?.quantity ??
-                                "1",
-
-                            unit:
-                                invoice?.unit ||
-                                "Job",
-
-                            rate:
-                                invoice?.rate ??
-                                invoice?.amount ??
-                                "0",
-                        },
-                    ]);
-                } else {
-                    setFormData((prev) => ({
-                        ...prev,
-                        invoice_number:
-                            getNextInvoiceNumber(
-                                invoicesData
-                            ),
-                    }));
+                    setItems(itemsFromApi(invoice.items));
+                } else if (searchParams.get("job")) {
+                    await applyDraft(searchParams.get("job"));
                 }
-            } catch (err) {
-                console.error(
-                    "Failed to load invoice data:",
-                    err
-                );
-
-                setError(
-                    err?.response?.data?.message ||
-                    "Failed to load invoice data."
-                );
+            } catch (error) {
+                showToast(errorMessage(error, "Unable to load the invoice form."), "error");
             } finally {
-                setLoading(false);
+                if (active) setLoading(false);
             }
         };
+        load();
+        return () => {
+            active = false;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editInvoiceId]);
 
-        loadData();
-    }, [editInvoiceId, isEditMode]);
-
-    /*
-     * ============================================================
-     * AVAILABLE JOBS
-     * ============================================================
-     */
-
-    const availableJobs = useMemo(() => {
-        const invoicedJobIds = new Set(
-            invoices
-                .filter(
-                    (invoice) =>
-                        !isEditMode ||
-                        String(invoice.id) !==
-                            String(editInvoiceId)
-                )
-                .map((invoice) =>
-                    String(invoice.job_id)
-                )
-                .filter(Boolean)
-        );
-
-        return jobs.filter((job) => {
-            if (isEditMode) {
-                return (
-                    String(job.id) ===
-                        String(formData.job_id) ||
-                    !invoicedJobIds.has(
-                        String(job.id)
-                    )
-                );
-            }
-
-            return !invoicedJobIds.has(
-                String(job.id)
-            );
+    // A job can be billed in several milestones, so every job stays selectable.
+    const availableJobs = useMemo(() => jobs, [jobs]);
+    const invoiceCounts = useMemo(() => {
+        const counts = {};
+        invoices.forEach((invoice) => {
+            counts[invoice.job_id] = (counts[invoice.job_id] || 0) + 1;
         });
-    }, [
-        jobs,
-        invoices,
-        isEditMode,
-        editInvoiceId,
-        formData.job_id,
-    ]);
+        return counts;
+    }, [invoices]);
 
-    /*
-     * ============================================================
-     * SELECTED JOB
-     * ============================================================
-     */
+    const selectedJob = jobs.find((job) => String(job.id) === form.job_id);
+    const customer = customers.find((entry) => entry.id === selectedJob?.customer_id);
 
-    const selectedJob = useMemo(() => {
-        return (
-            jobs.find(
-                (job) =>
-                    String(job.id) ===
-                    String(formData.job_id)
-            ) || null
-        );
-    }, [jobs, formData.job_id]);
-
-    /*
-     * ============================================================
-     * SELECTED CUSTOMER
-     * ============================================================
-     */
-
-    const selectedCustomer = useMemo(() => {
-        return normalizeCustomer(
-            getCustomerFromJob(
-                selectedJob,
-                customers
-            ),
-            selectedJob
-        );
-    }, [
-        selectedJob,
-        customers,
-    ]);
-
-    /*
-     * ============================================================
-     * ITEM TOTALS
-     * ============================================================
-     */
-
-    const itemTotals = useMemo(() => {
-        return items.map((item) => {
-            const quantity = Number(
-                item.quantity || 0
-            );
-
-            const rate = Number(
-                item.rate || 0
-            );
-
-            return quantity * rate;
-        });
-    }, [items]);
-
-    const subtotal = useMemo(() => {
-        return itemTotals.reduce(
-            (total, amount) =>
-                total + amount,
-            0
-        );
-    }, [itemTotals]);
-
-    const adjustment = Number(
-        formData.adjustment || 0
+    const supplyType = determineSupply(
+        company?.gst_registered,
+        company?.state_code,
+        form.place_of_supply || customer?.state_code
     );
-
-    const grandTotal = Math.max(
-        0,
-        subtotal + adjustment
-    );
-
-    /*
-     * ============================================================
-     * FORM CHANGE
-     * ============================================================
-     */
-
-    const handleChange = (event) => {
-        const {
-            name,
-            value,
-        } = event.target;
-
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
-
-        setError("");
-        setSuccessMessage("");
-    };
-
-    /*
-     * ============================================================
-     * ITEM CHANGE
-     * ============================================================
-     */
-
-    const handleItemChange = (
-        itemId,
-        field,
-        value
-    ) => {
-        setItems((prevItems) =>
-            prevItems.map((item) =>
-                item.id === itemId
-                    ? {
-                        ...item,
-                        [field]: value,
-                    }
-                    : item
-            )
-        );
-
-        setError("");
-        setSuccessMessage("");
-    };
-
-    const handleAddItem = () => {
-        setItems((prevItems) => [
-            ...prevItems,
-            createEmptyItem(),
-        ]);
-
-        setError("");
-        setSuccessMessage("");
-    };
-
-    const handleRemoveItem = (itemId) => {
-        setItems((prevItems) => {
-            if (prevItems.length === 1) {
-                return prevItems;
-            }
-
-            return prevItems.filter(
-                (item) =>
-                    item.id !== itemId
-            );
-        });
-
-        setError("");
-        setSuccessMessage("");
-    };
-
-    /*
-     * ============================================================
-     * JOB CHANGE
-     * ============================================================
-     */
 
     const handleJobChange = (event) => {
         const jobId = event.target.value;
-
-        const job = jobs.find(
-            (item) =>
-                String(item.id) ===
-                String(jobId)
-        );
-
-        let description = "";
-        let rateValue = "0";
-
-        if (job) {
-            description =
-                job.job_name ||
-                job.name ||
-                job.quotation_description ||
-                job.description ||
-                "Job Service";
-
-            rateValue =
-                job.quotation_grand_total ??
-                job.quotation_amount ??
-                job.amount ??
-                0;
-        }
-
-        setFormData((prev) => ({
-            ...prev,
-            job_id: jobId,
-        }));
-
-        setItems((prevItems) => {
-            if (prevItems.length === 0) {
-                return [
-                    {
-                        ...createEmptyItem(),
-                        description,
-                        rate: String(rateValue),
-                    },
-                ];
-            }
-
-            const firstItem = prevItems[0];
-
-            return [
-                {
-                    ...firstItem,
-                    description,
-                    rate: String(rateValue),
-                },
-                ...prevItems.slice(1),
-            ];
-        });
-
-        setError("");
-        setSuccessMessage("");
+        setField("job_id", jobId);
+        setPercent("100");
+        if (!isEditMode) applyDraft(jobId);
     };
 
-    /*
-     * ============================================================
-     * VALIDATION
-     * ============================================================
-     */
-
-    const validateForm = () => {
-        if (!formData.job_id) {
-            return "Please select a job.";
-        }
-
-        if (!formData.invoice_number.trim()) {
-            return "Invoice number is required.";
-        }
-
-        if (!formData.invoice_date) {
-            return "Invoice date is required.";
-        }
-
-        if (!formData.due_date) {
-            return "Due date is required.";
-        }
-
-        if (
-            formData.due_date <
-            formData.invoice_date
-        ) {
-            return "Due date cannot be earlier than invoice date.";
-        }
-
-        if (items.length === 0) {
-            return "At least one item is required.";
-        }
-
-        for (const item of items) {
-            if (!item.description.trim()) {
-                return "Description is required for every item.";
-            }
-
-            if (
-                Number(item.quantity) <= 0
-            ) {
-                return "Quantity must be greater than 0.";
-            }
-
-            if (
-                Number(item.rate) < 0
-            ) {
-                return "Rate cannot be negative.";
-            }
-        }
-
-        if (!formData.payment_status) {
-            return "Payment status is required.";
-        }
-
-        return "";
+    const handlePercent = (value) => {
+        setPercent(value);
+        const parsed = Number(value);
+        if (!isEditMode && form.job_id && parsed > 0 && parsed <= 100) applyDraft(form.job_id, value);
     };
 
-    /*
-     * ============================================================
-     * BUILD PREVIEW DATA
-     * ============================================================
-     */
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        if (!form.job_id) return showToast("Please select a job.", "error");
+        if (form.due_date && form.due_date < form.invoice_date) {
+            return showToast("Due date cannot be before the invoice date.", "error");
+        }
+        const problem = validateItems(items);
+        if (problem) return showToast(problem, "error");
 
-    const buildPreviewData = () => {
-        const firstItem =
-            items[0] || {
-                description: "",
-                quantity: 1,
-                unit: "Job",
-                rate: 0,
-            };
-
-        return {
-            ...formData,
-
-            id: editInvoiceId || null,
-
-            description:
-                firstItem.description,
-
-            quantity:
-                Number(
-                    firstItem.quantity || 0
-                ),
-
-            unit:
-                firstItem.unit || "Job",
-
-            rate:
-                Number(
-                    firstItem.rate || 0
-                ),
-
-            adjustment,
-
-            subtotal,
-            grandTotal,
-            amount: grandTotal,
-
-            items: items.map((item) => ({
-                ...item,
-
-                quantity: Number(
-                    item.quantity || 0
-                ),
-
-                rate: Number(
-                    item.rate || 0
-                ),
-
-                amount:
-                    Number(
-                        item.quantity || 0
-                    ) *
-                    Number(
-                        item.rate || 0
-                    ),
-            })),
-
+        const payload = {
+            job_id: Number(form.job_id),
+            invoice_number: form.invoice_number.trim() || undefined,
+            invoice_date: form.invoice_date,
+            due_date: form.due_date || undefined,
+            place_of_supply: form.place_of_supply || undefined,
+            adjustment: Number(form.adjustment) || 0,
+            reverse_charge: form.reverse_charge,
+            milestone_label: form.milestone_label.trim(),
+            notes: form.notes.trim(),
+            terms_conditions: form.terms_conditions.trim(),
             status: "Submitted",
-
-            customer:
-                selectedCustomer || null,
-
-            job:
-                selectedJob || null,
-
-            quotation:
-                selectedJob?.quotation ||
-                null,
-
-            rfq:
-                selectedJob?.rfq ||
-                null,
+            items: itemsToApi(items),
         };
-    };
-
-    /*
-     * ============================================================
-     * SAVE
-     * ============================================================
-     */
-
-    const handleSave = async (
-        previewAfterSave = false
-    ) => {
-        const validationError =
-            validateForm();
-
-        if (validationError) {
-            setError(validationError);
-            return;
-        }
 
         try {
             setSaving(true);
-            setError("");
-            setSuccessMessage("");
-
-            const firstItem = items[0];
-
-            const payload = {
-                job_id: Number(
-                    formData.job_id
-                ),
-
-                invoice_number:
-                    formData.invoice_number.trim(),
-
-                invoice_date:
-                    formData.invoice_date,
-
-                due_date:
-                    formData.due_date,
-
-                amount: grandTotal,
-
-                status: "Submitted",
-
-                payment_status:
-                    formData.payment_status,
-
-                notes:
-                    formData.notes || "",
-
-                terms_conditions:
-                    formData.terms_conditions ||
-                    "",
-
-                description:
-                    firstItem?.description ||
-                    "",
-
-                quantity:
-                    Number(
-                        firstItem?.quantity ||
-                        0
-                    ),
-
-                unit:
-                    firstItem?.unit ||
-                    "Job",
-
-                rate:
-                    Number(
-                        firstItem?.rate ||
-                        0
-                    ),
-
-                adjustment,
-            };
-
-            let response;
-
-            if (isEditMode) {
-                response = await api.put(
-                    `/invoices/${editInvoiceId}`,
-                    payload
-                );
-            } else {
-                response = await api.post(
-                    "/invoices",
-                    payload
-                );
-            }
-
-            const savedInvoice =
-                response?.data?.invoice ||
-                response?.data ||
-                {};
-
-            const savedInvoiceId =
-                savedInvoice?.id ||
-                editInvoiceId;
-
-            if (previewAfterSave) {
-                sessionStorage.setItem(
-                    "rayaprocure_invoice_preview",
-                    JSON.stringify({
-                        ...buildPreviewData(),
-                        id: savedInvoiceId,
-                    })
-                );
-
-                navigate(
-                    `/invoices/${savedInvoiceId}/preview`
-                );
-
-                return;
-            }
-
-            setSuccessMessage(
-                isEditMode
-                    ? "Invoice updated successfully."
-                    : "Invoice created successfully."
-            );
-
-            showToast?.(
-                isEditMode
-                    ? "Invoice updated successfully."
-                    : "Invoice created successfully.",
-                "success"
-            );
-
-            setTimeout(() => {
-                navigate("/invoices");
-            }, 500);
-        } catch (err) {
-            console.error(
-                "Failed to save invoice:",
-                err
-            );
-
-            const message =
-                err?.response?.data?.message ||
-                err?.response?.data?.error ||
-                "Failed to save invoice.";
-
-            setError(message);
-
-            showToast?.(
-                message,
-                "error"
-            );
+            const response = isEditMode
+                ? await api.put(`/invoices/${editInvoiceId}`, payload)
+                : await api.post("/invoices", payload);
+            showToast(response.data?.message || "Invoice saved.", "success");
+            navigate(`/invoices/${response.data?.id || editInvoiceId}/preview`);
+        } catch (error) {
+            showToast(errorMessage(error, "Unable to save the invoice."), "error");
         } finally {
             setSaving(false);
         }
     };
 
-    /*
-     * ============================================================
-     * PREVIEW
-     * ============================================================
-     */
-
-    const handlePreview = () => {
-        const validationError =
-            validateForm();
-
-        if (validationError) {
-            setError(validationError);
-            return;
-        }
-
-        try {
-            sessionStorage.setItem(
-                "rayaprocure_invoice_preview",
-                JSON.stringify(
-                    buildPreviewData()
-                )
-            );
-
-            navigate(
-                "/invoices/preview"
-            );
-        } catch (err) {
-            console.error(
-                "Failed to prepare invoice preview:",
-                err
-            );
-
-            setError(
-                "Unable to prepare invoice preview."
-            );
-        }
-    };
-
-    const handleCancel = () => {
-        navigate("/invoices");
-    };
-
-    /*
-     * ============================================================
-     * LOADING
-     * ============================================================
-     */
-
     if (loading) {
         return (
             <MainLayout>
                 <div className="quotations-page">
-
-                    <PageHeader
-                        eyebrow="INVOICES"
-                        title={
-                            isEditMode
-                                ? "Edit Invoice"
-                                : "Create Invoice"
-                        }
-                        description={
-                            isEditMode
-                                ? "Update the invoice details below."
-                                : "Create a professional invoice for a completed job."
-                        }
-                    />
-
-                    <div className="quotation-form-section">
-
-                        <div className="quotation-section-heading">
-
-                            <div>
-                                <h3>
-                                    Loading Invoice
-                                </h3>
-
-                                <p>
-                                    Please wait while invoice details are being loaded.
-                                </p>
-                            </div>
-
-                        </div>
-
-                    </div>
-
+                    <PageHeader eyebrow="INVOICES" title="Invoice" description="Loading…" />
                 </div>
             </MainLayout>
         );
     }
 
-    /*
-     * ============================================================
-     * PAGE
-     * ============================================================
-     */
-
     return (
         <MainLayout>
-
             <div className="quotations-page">
-
                 <PageHeader
                     eyebrow="INVOICES"
-                    title={
-                        isEditMode
-                            ? "Edit Invoice"
-                            : "Create Invoice"
-                    }
-                    description={
-                        isEditMode
-                            ? "Update invoice information, services, payment details and terms."
-                            : "Create a professional invoice for a completed job."
-                    }
+                    title={isEditMode ? "Edit Invoice" : "Create Invoice"}
+                    description="Prepare a GST tax invoice from a job."
                 />
 
-                {error && (
-                    <div
-                        className="invoice-alert error"
-                        role="alert"
-                    >
-                        {error}
-                    </div>
-                )}
-
-                {successMessage && (
-                    <div
-                        className="invoice-alert success"
-                        role="status"
-                    >
-                        {successMessage}
-                    </div>
-                )}
-
-                <form
-                    className="vf-form quotation-create-form"
-                    onSubmit={(event) => {
-                        event.preventDefault();
-                        handleSave(false);
-                    }}
-                >
-
-                    {/* =================================================
-                        SECTION 1 — INVOICE INFORMATION
-                    ================================================== */}
-
+                <form className="vf-form quotation-create-form" onSubmit={handleSubmit}>
                     <div className="quotation-form-section">
-
                         <div className="quotation-section-heading">
-
-                            <div>
-
-                                <h3>
-                                    Invoice Information
-                                </h3>
-
-                                <p>
-                                    Select the job and enter the invoice details.
-                                </p>
-
-                            </div>
-
+                            <h3>Invoice information</h3>
+                            <p>Choose the job; items and tax are prefilled from its quotation.</p>
                         </div>
 
                         <div className="vf-form-row">
-
                             <div className="vf-form-group">
-
-                                <label htmlFor="job_id">
-                                    Job
-                                    <span className="required">
-                                        *
-                                    </span>
-                                </label>
-
-                                <select
-                                    id="job_id"
-                                    name="job_id"
-                                    value={
-                                        formData.job_id
-                                    }
-                                    onChange={
-                                        handleJobChange
-                                    }
-                                >
-
-                                    <option value="">
-                                        Select Job
-                                    </option>
-
-                                    {availableJobs.map(
-                                        (job) => (
-                                            <option
-                                                key={job.id}
-                                                value={job.id}
-                                            >
-                                                {job.job_number
-                                                    ? `${job.job_number} — `
-                                                    : ""}
-
-                                                {job.job_name ||
-                                                    job.name ||
-                                                    job.description ||
-                                                    `Job #${job.id}`}
-                                            </option>
-                                        )
-                                    )}
-
+                                <label htmlFor="job_id">Job</label>
+                                <select id="job_id" value={form.job_id} onChange={handleJobChange} required>
+                                    <option value="">Select job</option>
+                                    {availableJobs.map((job) => (
+                                        <option key={job.id} value={job.id}>
+                                            {job.job_name} — {job.company_name}
+                                            {invoiceCounts[job.id] ? ` (${invoiceCounts[job.id]} invoice${invoiceCounts[job.id] > 1 ? "s" : ""})` : ""}
+                                        </option>
+                                    ))}
                                 </select>
-
+                                {customer?.gstin && <small>Customer GSTIN: {customer.gstin}</small>}
                             </div>
 
                             <div className="vf-form-group">
-
-                                <label htmlFor="invoice_number">
-                                    Invoice Number
-                                    <span className="required">
-                                        *
-                                    </span>
-                                </label>
-
+                                <label htmlFor="invoice_number">Invoice number</label>
                                 <input
                                     id="invoice_number"
-                                    name="invoice_number"
-                                    type="text"
-                                    value={
-                                        formData.invoice_number
-                                    }
-                                    onChange={
-                                        handleChange
-                                    }
-                                    placeholder="INV-00001"
+                                    value={form.invoice_number}
+                                    onChange={(event) => setField("invoice_number", event.target.value)}
+                                    placeholder="Auto-generated"
                                 />
-
                             </div>
 
                             <div className="vf-form-group">
-
-                                <label htmlFor="invoice_date">
-                                    Invoice Date
-                                    <span className="required">
-                                        *
-                                    </span>
-                                </label>
-
-                                <input
-                                    id="invoice_date"
-                                    name="invoice_date"
-                                    type="date"
-                                    value={
-                                        formData.invoice_date
-                                    }
-                                    onChange={
-                                        handleChange
-                                    }
-                                />
-
+                                <label htmlFor="invoice_date">Invoice date</label>
+                                <input id="invoice_date" type="date" value={form.invoice_date} onChange={(event) => setField("invoice_date", event.target.value)} required />
                             </div>
 
                             <div className="vf-form-group">
-
-                                <label htmlFor="due_date">
-                                    Due Date
-                                    <span className="required">
-                                        *
-                                    </span>
-                                </label>
-
-                                <input
-                                    id="due_date"
-                                    name="due_date"
-                                    type="date"
-                                    value={
-                                        formData.due_date
-                                    }
-                                    onChange={
-                                        handleChange
-                                    }
-                                />
-
+                                <label htmlFor="due_date">Due date</label>
+                                <input id="due_date" type="date" value={form.due_date} min={form.invoice_date} onChange={(event) => setField("due_date", event.target.value)} />
                             </div>
-
-                            <div className="vf-form-group">
-
-                                <label htmlFor="payment_status">
-                                    Payment Status
-                                    <span className="required">
-                                        *
-                                    </span>
-                                </label>
-
-                                <select
-                                    id="payment_status"
-                                    name="payment_status"
-                                    value={
-                                        formData.payment_status
-                                    }
-                                    onChange={
-                                        handleChange
-                                    }
-                                >
-
-                                    <option value="Pending">
-                                        Pending
-                                    </option>
-
-                                    <option value="Partially Paid">
-                                        Partially Paid
-                                    </option>
-
-                                    <option value="Paid">
-                                        Paid
-                                    </option>
-
-                                    <option value="Overdue">
-                                        Overdue
-                                    </option>
-
-                                </select>
-
-                            </div>
-
                         </div>
 
-                    </div>
-
-                    {/* =================================================
-                        SECTION 2 — ITEMS / SERVICES
-                    ================================================== */}
-
-                    <div className="quotation-form-section">
-
-                        <div className="quotation-section-heading">
-
-                            <div>
-
-                                <h3>
-                                    Items / Services
-                                </h3>
-
-                                <p>
-                                    Add the services or job items included in this invoice.
-                                </p>
-
-                            </div>
-
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                onClick={handleAddItem}
-                                disabled={saving}
-                            >
-                                + Add Item
-                            </Button>
-
-                        </div>
-
-                        <div className="quotation-items-wrapper">
-
-                            {/* TABLE HEADER */}
-
-                            <div className="quotation-items-header">
-
-                                <div className="quotation-col-description">
-                                    Description
-                                </div>
-
-                                <div className="quotation-col-quantity">
-                                    Quantity
-                                </div>
-
-                                <div className="quotation-col-unit">
-                                    Unit
-                                </div>
-
-                                <div className="quotation-col-rate">
-                                    Rate
-                                </div>
-
-                                <div className="quotation-col-amount">
-                                    Amount
-                                </div>
-
-                                <div className="quotation-col-action">
-                                    Action
-                                </div>
-
-                            </div>
-
-                            {/* TABLE ROWS */}
-
-                            {items.map((item, index) => {
-
-                                const itemAmount =
-                                    itemTotals[index] || 0;
-
-                                return (
-                                    <div
-                                        className="quotation-item-row"
-                                        key={item.id}
-                                    >
-
-                                        {/* DESCRIPTION */}
-
-                                        <div className="quotation-col-description">
-
-                                            <div className="vf-form-group">
-
-                                                <input
-                                                    name={`description-${item.id}`}
-                                                    type="text"
-                                                    value={
-                                                        item.description
-                                                    }
-                                                    onChange={(event) =>
-                                                        handleItemChange(
-                                                            item.id,
-                                                            "description",
-                                                            event.target.value
-                                                        )
-                                                    }
-                                                    placeholder="Service / Job description"
-                                                />
-
-                                            </div>
-
-                                        </div>
-
-                                        {/* QUANTITY */}
-
-                                        <div className="quotation-col-quantity">
-
-                                            <div className="vf-form-group">
-
-                                                <input
-                                                    type="number"
-                                                    min="0.01"
-                                                    step="0.01"
-                                                    value={
-                                                        item.quantity
-                                                    }
-                                                    onChange={(event) =>
-                                                        handleItemChange(
-                                                            item.id,
-                                                            "quantity",
-                                                            event.target.value
-                                                        )
-                                                    }
-                                                />
-
-                                            </div>
-
-                                        </div>
-
-                                        {/* UNIT */}
-
-                                        <div className="quotation-col-unit">
-
-                                            <div className="vf-form-group">
-
-                                                <input
-                                                    type="text"
-                                                    value={
-                                                        item.unit
-                                                    }
-                                                    onChange={(event) =>
-                                                        handleItemChange(
-                                                            item.id,
-                                                            "unit",
-                                                            event.target.value
-                                                        )
-                                                    }
-                                                    placeholder="Job"
-                                                />
-
-                                            </div>
-
-                                        </div>
-
-                                        {/* RATE */}
-
-                                        <div className="quotation-col-rate">
-
-                                            <div className="vf-form-group">
-
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    step="0.01"
-                                                    value={
-                                                        item.rate
-                                                    }
-                                                    onChange={(event) =>
-                                                        handleItemChange(
-                                                            item.id,
-                                                            "rate",
-                                                            event.target.value
-                                                        )
-                                                    }
-                                                />
-
-                                            </div>
-
-                                        </div>
-
-                                        {/* AMOUNT */}
-
-                                        <div className="quotation-col-amount">
-
-                                            <strong>
-                                                {formatCurrency(
-                                                    itemAmount
-                                                )}
-                                            </strong>
-
-                                        </div>
-
-                                        {/* ACTION */}
-
-                                        <div className="quotation-col-action">
-
-                                            <button
-                                                type="button"
-                                                className="quotation-remove-item"
-                                                onClick={() =>
-                                                    handleRemoveItem(
-                                                        item.id
-                                                    )
-                                                }
-                                                disabled={
-                                                    items.length === 1 ||
-                                                    saving
-                                                }
-                                                title={
-                                                    items.length === 1
-                                                        ? "At least one item is required"
-                                                        : "Remove item"
-                                                }
-                                                aria-label="Remove item"
-                                            >
-                                                ×
-                                            </button>
-
-                                        </div>
-
-                                    </div>
-                                );
-                            })}
-
-                        </div>
-
-                    </div>
-
-                    {/* =================================================
-                        SECTION 3 — TOTALS
-                    ================================================== */}
-
-                    <div className="quotation-form-section">
-
-                        <div className="quotation-totals-section">
-
-                            <div className="quotation-total-row">
-
-                                <span>
-                                    Subtotal
-                                </span>
-
-                                <strong>
-                                    {formatCurrency(
-                                        subtotal
-                                    )}
-                                </strong>
-
-                            </div>
-
-                            <div className="quotation-total-row">
-
-                                <span>
-                                    Adjustment
-                                </span>
-
-                                <div className="invoice-adjustment-field">
-
-                                    <span>
-                                        ₹
-                                    </span>
-
+                        {!isEditMode && form.job_id && (
+                            <div className="vf-form-row">
+                                <div className="vf-form-group">
+                                    <label htmlFor="percent">Bill % of quotation</label>
                                     <input
-                                        name="adjustment"
+                                        id="percent"
                                         type="number"
-                                        step="0.01"
-                                        value={
-                                            formData.adjustment
-                                        }
-                                        onChange={
-                                            handleChange
-                                        }
+                                        min="1"
+                                        max="100"
+                                        step="1"
+                                        value={percent}
+                                        onChange={(event) => handlePercent(event.target.value)}
                                     />
-
+                                    <small>
+                                        {billing
+                                            ? `Quotation total ₹${billing.quoteTotal.toLocaleString("en-IN")} · already billed ₹${billing.billed.toLocaleString("en-IN")} (${billing.count} invoice${billing.count === 1 ? "" : "s"}) · remaining ₹${billing.remaining.toLocaleString("en-IN")}`
+                                            : "Use less than 100 for an advance or milestone invoice."}
+                                    </small>
                                 </div>
-
+                                <div className="vf-form-group">
+                                    <label htmlFor="milestone_label">Milestone label</label>
+                                    <input
+                                        id="milestone_label"
+                                        value={form.milestone_label}
+                                        onChange={(event) => setField("milestone_label", event.target.value)}
+                                        placeholder="e.g. Advance 30%"
+                                        maxLength={120}
+                                    />
+                                </div>
                             </div>
+                        )}
 
-                            <div className="quotation-total-row quotation-grand-total">
-
-                                <span>
-                                    Grand Total
-                                </span>
-
-                                <strong>
-                                    {formatCurrency(
-                                        grandTotal
-                                    )}
-                                </strong>
-
+                        {company?.gst_registered && (
+                            <div className="vf-form-row">
+                                <div className="vf-form-group">
+                                    <label htmlFor="place_of_supply">Place of supply</label>
+                                    <select id="place_of_supply" value={form.place_of_supply} onChange={(event) => setField("place_of_supply", event.target.value)}>
+                                        <option value="">
+                                            {customer?.state_code ? "Customer's state" : "Same as my state"}
+                                        </option>
+                                        {states.map((state) => (
+                                            <option key={state.code} value={state.code}>
+                                                {state.code} — {state.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="vf-form-group">
+                                    <label htmlFor="reverse_charge">Reverse charge</label>
+                                    <select id="reverse_charge" value={form.reverse_charge ? "yes" : "no"} onChange={(event) => setField("reverse_charge", event.target.value === "yes")}>
+                                        <option value="no">No</option>
+                                        <option value="yes">Yes</option>
+                                    </select>
+                                </div>
                             </div>
-
-                        </div>
-
+                        )}
                     </div>
-
-                    {/* =================================================
-                        SECTION 4 — NOTES
-                    ================================================== */}
 
                     <div className="quotation-form-section">
-
                         <div className="quotation-section-heading">
-
-                            <div>
-
-                                <h3>
-                                    Notes
-                                </h3>
-
-                                <p>
-                                    Add any additional information for the customer.
-                                </p>
-
-                            </div>
-
+                            <h3>Items / services</h3>
+                            <p>Amounts are recalculated by the server when you save.</p>
                         </div>
-
-                        <div className="vf-form-group">
-
-                            <textarea
-                                name="notes"
-                                value={
-                                    formData.notes
-                                }
-                                onChange={
-                                    handleChange
-                                }
-                                rows="4"
-                                placeholder="Enter invoice notes..."
-                            />
-
-                        </div>
-
+                        <LineItemsEditor
+                            items={items}
+                            onChange={setItems}
+                            adjustment={form.adjustment}
+                            onAdjustmentChange={(value) => setField("adjustment", value)}
+                            supplyType={supplyType}
+                            roundOff={company?.round_off_enabled !== false}
+                            catalog={catalog}
+                        />
                     </div>
-
-                    {/* =================================================
-                        SECTION 5 — TERMS & CONDITIONS
-                    ================================================== */}
 
                     <div className="quotation-form-section">
-
                         <div className="quotation-section-heading">
-
-                            <div>
-
-                                <h3>
-                                    Terms &amp; Conditions
-                                </h3>
-
-                                <p>
-                                    Define the payment and invoice terms for this document.
-                                </p>
-
-                            </div>
-
+                            <h3>Notes &amp; terms</h3>
                         </div>
-
                         <div className="vf-form-group">
-
-                            <textarea
-                                name="terms_conditions"
-                                value={
-                                    formData.terms_conditions
-                                }
-                                onChange={
-                                    handleChange
-                                }
-                                rows="5"
-                                placeholder="Enter terms and conditions..."
-                            />
-
+                            <label htmlFor="notes">Notes</label>
+                            <textarea id="notes" value={form.notes} onChange={(event) => setField("notes", event.target.value)} rows="3" />
                         </div>
-
+                        <div className="vf-form-group">
+                            <label htmlFor="terms_conditions">Terms &amp; conditions</label>
+                            <textarea id="terms_conditions" value={form.terms_conditions} onChange={(event) => setField("terms_conditions", event.target.value)} rows="5" />
+                        </div>
                     </div>
-
-                    {/* =================================================
-                        ACTIONS
-                    ================================================== */}
 
                     <div className="vf-form-actions">
-
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={
-                                handleCancel
-                            }
-                            disabled={saving}
-                        >
-                            Cancel
+                        <Button variant="secondary" onClick={() => navigate("/invoices")}>Cancel</Button>
+                        <Button type="submit" disabled={saving}>
+                            {saving ? "Saving…" : isEditMode ? "Update invoice" : "Create invoice"}
                         </Button>
-
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={
-                                handlePreview
-                            }
-                            disabled={saving}
-                        >
-                            Preview Invoice
-                        </Button>
-
-                        <Button
-                            type="submit"
-                            disabled={saving}
-                        >
-                            {saving
-                                ? "Saving..."
-                                : isEditMode
-                                    ? "Update Invoice"
-                                    : "Save Invoice"}
-                        </Button>
-
                     </div>
-
                 </form>
-
             </div>
-
         </MainLayout>
     );
-};
+}
 
 export default CreateInvoice;

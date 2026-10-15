@@ -1,1520 +1,314 @@
 import "./Quotations.css";
 
-import { useEffect, useState } from "react";
-import {
-    useNavigate,
-    useParams,
-} from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 import api from "../../services/api";
+import { useCompany, useStates } from "../../services/company";
 
 import MainLayout from "../../layouts/MainLayout";
 import PageHeader from "../../components/PageHeader";
 import Button from "../../components/Button";
-
+import LineItemsEditor from "../../components/LineItemsEditor";
 import { useToast } from "../../components/Toast/ToastContext";
 
+import { addDays, errorMessage, todayISO } from "../../utils/format";
+import {
+    blankItem,
+    determineSupply,
+    itemsFromApi,
+    itemsToApi,
+    validateItems,
+} from "../../utils/gst";
 
-const DEFAULT_NOTES = `Please review the quoted scope, quantities, and specifications carefully before confirmation.
-This quotation is subject to the availability of required materials and resources.
-Any applicable taxes or statutory charges will be handled as per the agreed commercial terms.`;
+const FALLBACK_NOTES = `Please review the quoted scope, quantities, and specifications carefully before confirmation.
+This quotation is subject to the availability of required materials and resources.`;
 
-
-const DEFAULT_TERMS = `1. This quotation is valid for 10 days from the quotation date.
+const FALLBACK_TERMS = `1. This quotation is valid until the date shown above.
 2. Work or supply will be carried out according to the agreed scope and specifications.
-3. Any additional work or requirement outside the agreed scope will be charged separately.
+3. Any additional work outside the agreed scope will be charged separately.
 4. Delivery or work schedules will be mutually agreed with the customer.
-5. Payment terms will be as mutually agreed between Rayaprocure and the customer.
-6. Any changes to the scope, quantity, or specifications may require a revised quotation.`;
-
-
-function getTodayDate() {
-
-    const today = new Date();
-
-    const year = today.getFullYear();
-
-    const month = String(
-        today.getMonth() + 1
-    ).padStart(2, "0");
-
-    const day = String(
-        today.getDate()
-    ).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-}
-
-
-function addDays(dateString, days) {
-
-    if (!dateString) {
-        return "";
-    }
-
-    const date = new Date(
-        `${dateString}T00:00:00`
-    );
-
-    date.setDate(
-        date.getDate() + days
-    );
-
-    const year = date.getFullYear();
-
-    const month = String(
-        date.getMonth() + 1
-    ).padStart(2, "0");
-
-    const day = String(
-        date.getDate()
-    ).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-}
-
+5. Payment terms will be as mutually agreed.
+6. Changes to scope, quantity, or specifications may require a revised quotation.`;
 
 function CreateQuotation() {
-
     const navigate = useNavigate();
-
     const { quotationId } = useParams();
-
     const { showToast } = useToast();
+    const isEditMode = Boolean(quotationId);
 
-
-    // =====================================================
-    // EDIT MODE
-    // =====================================================
-
-    const isEditMode =
-        Boolean(quotationId);
-
+    const company = useCompany();
+    const states = useStates();
 
     const [rfqs, setRfqs] = useState([]);
+    const [customers, setCustomers] = useState([]);
+    const [catalog, setCatalog] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
 
-    const [loadingRfqs, setLoadingRfqs] =
-        useState(true);
-
-    const [loadingQuotation, setLoadingQuotation] =
-        useState(isEditMode);
-
-    const [saving, setSaving] =
-        useState(false);
-
-
-    // =====================================================
-    // FORM DATA
-    // =====================================================
-
-    const [formData, setFormData] = useState({
-
+    const [form, setForm] = useState({
         rfq_id: "",
-
-        quotation_date:
-            getTodayDate(),
-
-        valid_until:
-            addDays(
-                getTodayDate(),
-                10
-            ),
-
-        adjustment: "0",
-
-        notes:
-            DEFAULT_NOTES,
-
-        terms_conditions:
-            DEFAULT_TERMS,
-
+        quotation_date: todayISO(),
+        valid_until: "",
+        place_of_supply: "",
         status: "Draft",
+        adjustment: "0",
+        notes: "",
+        terms_conditions: "",
     });
+    const [items, setItems] = useState([blankItem()]);
+    const [validUntilTouched, setValidUntilTouched] = useState(false);
 
-
-    // =====================================================
-    // ITEMS
-    // =====================================================
-
-    const [items, setItems] = useState([
-        {
-            description: "",
-            quantity: "",
-            unit: "",
-            rate: "",
-        },
-    ]);
-
-
-    // =====================================================
-    // FETCH RFQS
-    // =====================================================
-
+    // Load reference data (and the quotation itself when editing).
     useEffect(() => {
+        let active = true;
+        const load = async () => {
+            try {
+                const requests = [api.get("/rfqs"), api.get("/customers"), api.get("/api/catalog")];
+                if (isEditMode) requests.push(api.get(`/quotations/${quotationId}`));
+                const [rfqResponse, customerResponse, catalogResponse, quotationResponse] =
+                    await Promise.all(requests);
+                if (!active) return;
 
-        fetchRfqs();
+                setRfqs(rfqResponse.data || []);
+                setCustomers(customerResponse.data || []);
+                setCatalog((catalogResponse.data || []).filter((entry) => entry.is_active));
 
-    }, []);
-
-
-    const fetchRfqs = async () => {
-
-        try {
-
-            const response =
-                await api.get("/rfqs");
-
-            setRfqs(
-                response.data || []
-            );
-
-        } catch (error) {
-
-            console.error(
-                "Failed to fetch RFQs:",
-                error
-            );
-
-            showToast(
-                "Unable to load RFQs. Please try again.",
-                "error"
-            );
-
-        } finally {
-
-            setLoadingRfqs(false);
-        }
-    };
-
-
-    // =====================================================
-    // FETCH EXISTING QUOTATION FOR EDIT
-    // =====================================================
-
-    useEffect(() => {
-
-        if (quotationId) {
-
-            fetchQuotation();
-
-        }
-
+                if (quotationResponse) {
+                    const quotation = quotationResponse.data;
+                    setForm({
+                        rfq_id: String(quotation.rfq_id || ""),
+                        quotation_date: quotation.quotation_date || todayISO(),
+                        valid_until: quotation.valid_until || "",
+                        place_of_supply: quotation.place_of_supply || "",
+                        status: quotation.status || "Draft",
+                        adjustment: String(quotation.adjustment ?? 0),
+                        notes: quotation.notes || "",
+                        terms_conditions: quotation.terms_conditions || "",
+                    });
+                    setItems(itemsFromApi(quotation.items));
+                    setValidUntilTouched(true);
+                }
+            } catch (error) {
+                showToast(errorMessage(error, "Unable to load the quotation form."), "error");
+                if (isEditMode) navigate("/quotations");
+            } finally {
+                if (active) setLoading(false);
+            }
+        };
+        load();
+        return () => {
+            active = false;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [quotationId]);
 
+    // Apply company defaults once they arrive (new quotations only).
+    useEffect(() => {
+        if (!company || isEditMode) return;
+        setForm((previous) => ({
+            ...previous,
+            valid_until:
+                previous.valid_until || addDays(previous.quotation_date, company.quotation_valid_days || 15),
+            notes: previous.notes || company.default_quotation_notes || FALLBACK_NOTES,
+            terms_conditions:
+                previous.terms_conditions || company.default_quotation_terms || FALLBACK_TERMS,
+        }));
+    }, [company, isEditMode]);
 
-    const fetchQuotation = async () => {
+    const selectedRfq = rfqs.find((rfq) => String(rfq.id) === form.rfq_id);
+    const customer = useMemo(
+        () => customers.find((entry) => entry.id === selectedRfq?.customer_id),
+        [customers, selectedRfq]
+    );
 
-        try {
+    const supplyType = determineSupply(
+        company?.gst_registered,
+        company?.state_code,
+        form.place_of_supply || customer?.state_code
+    );
 
-            setLoadingQuotation(true);
+    const setField = (name, value) => setForm((previous) => ({ ...previous, [name]: value }));
 
-            const response =
-                await api.get(
-                    `/quotations/${quotationId}`
-                );
-
-            const quotation =
-                response.data;
-
-
-            // -------------------------------------------------
-            // FORM DATA
-            // -------------------------------------------------
-
-            setFormData({
-
-                rfq_id:
-                    String(
-                        quotation.rfq_id || ""
-                    ),
-
-                quotation_date:
-                    quotation.quotation_date ||
-                    getTodayDate(),
-
-                valid_until:
-                    quotation.valid_until ||
-                    addDays(
-                        quotation.quotation_date ||
-                        getTodayDate(),
-                        10
-                    ),
-
-                adjustment:
-                    String(
-                        quotation.adjustment ?? 0
-                    ),
-
-                notes:
-                    quotation.notes ||
-                    DEFAULT_NOTES,
-
-                terms_conditions:
-                    quotation.terms_conditions ||
-                    DEFAULT_TERMS,
-
-                status:
-                    quotation.status ||
-                    "Draft",
-            });
-
-
-            // -------------------------------------------------
-            // ITEMS
-            // -------------------------------------------------
-
-            if (
-                quotation.items &&
-                quotation.items.length > 0
-            ) {
-
-                setItems(
-
-                    quotation.items.map(
-                        (item) => ({
-
-                            description:
-                                item.description ||
-                                "",
-
-                            quantity:
-                                String(
-                                    item.quantity ??
-                                    ""
-                                ),
-
-                            unit:
-                                item.unit ||
-                                "",
-
-                            rate:
-                                String(
-                                    item.rate ??
-                                    ""
-                                ),
-                        })
-                    )
-
-                );
-
-            } else {
-
-                setItems([
-                    {
-                        description: "",
-                        quantity: "",
-                        unit: "",
-                        rate: "",
-                    },
-                ]);
-
-            }
-
-        } catch (error) {
-
-            console.error(
-                "Failed to load quotation:",
-                error
-            );
-
-            showToast(
-                error.response?.data?.message ||
-                "Unable to load quotation.",
-                "error"
-            );
-
-            navigate("/quotations");
-
-        } finally {
-
-            setLoadingQuotation(false);
-        }
-    };
-
-
-    // =====================================================
-    // FORM CHANGE
-    // =====================================================
-
-    const handleFormChange = (
-        event
-    ) => {
-
-        const {
-            name,
-            value,
-        } = event.target;
-
-
-        if (
-            name ===
-            "quotation_date"
-        ) {
-
-            setFormData(
-                (previous) => ({
-
-                    ...previous,
-
-                    quotation_date:
-                        value,
-
-                    valid_until:
-                        addDays(
-                            value,
-                            10
-                        ),
-                })
-            );
-
+    const handleChange = (event) => {
+        const { name, value } = event.target;
+        if (name === "quotation_date") {
+            setForm((previous) => ({
+                ...previous,
+                quotation_date: value,
+                valid_until: validUntilTouched
+                    ? previous.valid_until
+                    : addDays(value, company?.quotation_valid_days || 15),
+            }));
             return;
         }
-
-
-        setFormData(
-            (previous) => ({
-
-                ...previous,
-
-                [name]: value,
-            })
-        );
+        if (name === "valid_until") setValidUntilTouched(true);
+        setField(name, value);
     };
 
-
-    // =====================================================
-    // ITEM CHANGE
-    // =====================================================
-
-    const handleItemChange = (
-        index,
-        field,
-        value
-    ) => {
-
-        setItems(
-            (previous) => {
-
-                const updatedItems =
-                    [...previous];
-
-                updatedItems[index] = {
-
-                    ...updatedItems[index],
-
-                    [field]: value,
-                };
-
-                return updatedItems;
-            }
-        );
-    };
-
-
-    // =====================================================
-    // ADD ITEM
-    // =====================================================
-
-    const addItem = () => {
-
-        setItems(
-            (previous) => [
-
-                ...previous,
-
-                {
-                    description: "",
-                    quantity: "",
-                    unit: "",
-                    rate: "",
-                },
-            ]
-        );
-    };
-
-
-    // =====================================================
-    // REMOVE ITEM
-    // =====================================================
-
-    const removeItem = (
-        index
-    ) => {
-
-        if (
-            items.length === 1
-        ) {
-
-            showToast(
-                "At least one quotation item is required.",
-                "error"
-            );
-
-            return;
-        }
-
-
-        setItems(
-            (previous) =>
-                previous.filter(
-                    (_, itemIndex) =>
-                        itemIndex !== index
-                )
-        );
-    };
-
-
-    // =====================================================
-    // ITEM AMOUNT
-    // =====================================================
-
-    const getItemAmount = (
-        item
-    ) => {
-
-        const quantity =
-            Number(
-                item.quantity
-            );
-
-        const rate =
-            Number(
-                item.rate
-            );
-
-
-        if (
-            !Number.isFinite(
-                quantity
-            ) ||
-            !Number.isFinite(
-                rate
-            )
-        ) {
-
-            return 0;
-        }
-
-
-        return quantity * rate;
-    };
-
-
-    // =====================================================
-    // SUBTOTAL
-    // =====================================================
-
-    const subtotal =
-        items.reduce(
-            (
-                total,
-                item
-            ) =>
-                total +
-                getItemAmount(
-                    item
-                ),
-            0
-        );
-
-
-    // =====================================================
-    // ADJUSTMENT
-    // =====================================================
-
-    const adjustment =
-        Number(
-            formData.adjustment
-        ) || 0;
-
-
-    // =====================================================
-    // GRAND TOTAL
-    // =====================================================
-
-    const grandTotal =
-        subtotal +
-        adjustment;
-
-
-    // =====================================================
-    // FORMAT MONEY
-    // =====================================================
-
-    const formatMoney = (
-        value
-    ) => {
-
-        return Number(
-            value || 0
-        ).toLocaleString(
-            "en-IN",
-            {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            }
-        );
-    };
-
-
-    // =====================================================
-    // SUBMIT
-    // =====================================================
-
-    const handleSubmit = async (
-        event
-    ) => {
-
+    const handleSubmit = async (event) => {
         event.preventDefault();
-
-
-        // -------------------------------------------------
-        // RFQ VALIDATION
-        // -------------------------------------------------
-
-        if (
-            !formData.rfq_id
-        ) {
-
-            showToast(
-                "Please select an RFQ.",
-                "error"
-            );
-
-            return;
+        if (!form.rfq_id) return showToast("Please select an RFQ.", "error");
+        if (form.valid_until && form.valid_until < form.quotation_date) {
+            return showToast("Valid-until date cannot be before the quotation date.", "error");
         }
+        const problem = validateItems(items);
+        if (problem) return showToast(problem, "error");
 
-
-        // -------------------------------------------------
-        // ITEM VALIDATION
-        // -------------------------------------------------
-
-        for (
-            let index = 0;
-            index < items.length;
-            index++
-        ) {
-
-            const item =
-                items[index];
-
-
-            if (
-                !item.description.trim()
-            ) {
-
-                showToast(
-                    `Please enter a description for item ${index + 1}.`,
-                    "error"
-                );
-
-                return;
-            }
-
-
-            if (
-                !item.quantity ||
-                Number(
-                    item.quantity
-                ) <= 0
-            ) {
-
-                showToast(
-                    `Please enter a valid quantity for item ${index + 1}.`,
-                    "error"
-                );
-
-                return;
-            }
-
-
-            if (
-                !item.unit.trim()
-            ) {
-
-                showToast(
-                    `Please enter a unit for item ${index + 1}.`,
-                    "error"
-                );
-
-                return;
-            }
-
-
-            if (
-                item.rate === "" ||
-                Number(
-                    item.rate
-                ) < 0
-            ) {
-
-                showToast(
-                    `Please enter a valid rate for item ${index + 1}.`,
-                    "error"
-                );
-
-                return;
-            }
-        }
-
-
-        // -------------------------------------------------
-        // SAVE
-        // -------------------------------------------------
+        const payload = {
+            rfq_id: Number(form.rfq_id),
+            quotation_date: form.quotation_date,
+            valid_until: form.valid_until || undefined,
+            place_of_supply: form.place_of_supply || undefined,
+            status: form.status,
+            adjustment: Number(form.adjustment) || 0,
+            notes: form.notes.trim(),
+            terms_conditions: form.terms_conditions.trim(),
+            items: itemsToApi(items),
+        };
 
         try {
-
             setSaving(true);
-
-
-            const payload = {
-
-                rfq_id:
-                    Number(
-                        formData.rfq_id
-                    ),
-
-                quotation_date:
-                    formData.quotation_date,
-
-                items:
-                    items.map(
-                        (item) => ({
-
-                            description:
-                                item.description.trim(),
-
-                            quantity:
-                                Number(
-                                    item.quantity
-                                ),
-
-                            unit:
-                                item.unit.trim(),
-
-                            rate:
-                                Number(
-                                    item.rate
-                                ),
-                        })
-                    ),
-
-                adjustment:
-                    Number(
-                        formData.adjustment
-                    ) || 0,
-
-                notes:
-                    formData.notes.trim(),
-
-                terms_conditions:
-                    formData.terms_conditions.trim(),
-
-                status:
-                    formData.status,
-            };
-
-
-            let response;
-
-
-            // =================================================
-            // CREATE
-            // =================================================
-
-            if (!isEditMode) {
-
-                response =
-                    await api.post(
-                        "/quotations",
-                        payload
-                    );
-
-            }
-
-            // =================================================
-            // EDIT / UPDATE
-            // =================================================
-
-            else {
-
-                response =
-                    await api.put(
-                        `/quotations/${quotationId}`,
-                        payload
-                    );
-            }
-
-
-            // -------------------------------------------------
-            // SUCCESS
-            // -------------------------------------------------
-
-            showToast(
-
-                response.data?.message ||
-
-                (
-                    isEditMode
-                        ? "Quotation updated successfully."
-                        : "Quotation created successfully."
-                ),
-
-                "success"
-            );
-
-
-            navigate(
-                "/quotations"
-            );
-
+            const response = isEditMode
+                ? await api.put(`/quotations/${quotationId}`, payload)
+                : await api.post("/quotations", payload);
+            showToast(response.data?.message || "Quotation saved.", "success");
+            navigate(response.data?.id ? `/quotations/${response.data.id}/preview` : "/quotations");
         } catch (error) {
-
-            console.error(
-                "Quotation save error:",
-                error
-            );
-
-
-            showToast(
-
-                error.response?.data?.message ||
-
-                (
-                    isEditMode
-                        ? "Unable to update quotation. Please try again."
-                        : "Unable to create quotation. Please try again."
-                ),
-
-                "error"
-            );
-
+            showToast(errorMessage(error, "Unable to save the quotation."), "error");
         } finally {
-
             setSaving(false);
         }
     };
 
-
-    // =====================================================
-    // CANCEL
-    // =====================================================
-
-    const handleCancel = () => {
-
-        navigate(
-            "/quotations"
-        );
-    };
-
-
-    // =====================================================
-    // LOADING EDIT QUOTATION
-    // =====================================================
-
-    if (
-        isEditMode &&
-        loadingQuotation
-    ) {
-
+    if (loading) {
         return (
-
             <MainLayout>
-
                 <div className="quotations-page">
-
-                    <PageHeader
-                        eyebrow="QUOTATIONS"
-                        title="Edit Quotation"
-                        description="Loading quotation details..."
-                    />
-
-                    <div
-                        style={{
-                            padding: "40px",
-                            textAlign: "center",
-                        }}
-                    >
-                        Loading quotation...
-                    </div>
-
+                    <PageHeader eyebrow="QUOTATIONS" title="Quotation" description="Loading…" />
                 </div>
-
             </MainLayout>
         );
     }
 
-
-    // =====================================================
-    // RENDER
-    // =====================================================
-
     return (
-
         <MainLayout>
-
             <div className="quotations-page">
-
-
-                {/* =================================================
-                    PAGE HEADER
-                ================================================= */}
-
                 <PageHeader
-
                     eyebrow="QUOTATIONS"
-
-                    title={
-                        isEditMode
-                            ? "Edit Quotation"
-                            : "Create Quotation"
-                    }
-
-                    description={
-                        isEditMode
-                            ? "Update the quotation details and items."
-                            : "Prepare a professional quotation for your customer."
-                    }
-
+                    title={isEditMode ? "Edit Quotation" : "Create Quotation"}
+                    description="Prepare a GST-ready quotation for your customer."
                 />
 
-
-                <form
-                    className="vf-form quotation-create-form"
-                    onSubmit={
-                        handleSubmit
-                    }
-                >
-
-
-                    {/* =================================================
-                        QUOTATION INFORMATION
-                    ================================================= */}
-
+                <form className="vf-form quotation-create-form" onSubmit={handleSubmit}>
                     <div className="quotation-form-section">
-
                         <div className="quotation-section-heading">
-
-                            <h3>
-                                Quotation Information
-                            </h3>
-
-                            <p>
-                                Select the RFQ and quotation date.
-                            </p>
-
+                            <h3>Quotation information</h3>
+                            <p>Select the RFQ, dates, and place of supply.</p>
                         </div>
-
 
                         <div className="vf-form-row">
-
-
-                            {/* CUSTOMER / RFQ */}
-
                             <div className="vf-form-group">
-
-                                <label>
-                                    Customer / RFQ
-                                </label>
-
-
-                                <select
-                                    name="rfq_id"
-                                    value={
-                                        formData.rfq_id
-                                    }
-                                    onChange={
-                                        handleFormChange
-                                    }
-                                    required
-                                    disabled={
-                                        loadingRfqs
-                                    }
-                                >
-
-                                    <option value="">
-
-                                        {loadingRfqs
-                                            ? "Loading RFQs..."
-                                            : "Select RFQ / Customer"}
-
-                                    </option>
-
-
-                                    {rfqs.map(
-                                        (rfq) => (
-
-                                            <option
-                                                key={
-                                                    rfq.id
-                                                }
-                                                value={
-                                                    rfq.id
-                                                }
-                                            >
-
-                                                {
-                                                    rfq.rfq_number
-                                                }
-
-                                                {" — "}
-
-                                                {
-                                                    rfq.company_name
-                                                }
-
-                                            </option>
-
-                                        )
-                                    )}
-
+                                <label htmlFor="rfq_id">Customer / RFQ</label>
+                                <select id="rfq_id" name="rfq_id" value={form.rfq_id} onChange={handleChange} required>
+                                    <option value="">Select RFQ / customer</option>
+                                    {rfqs.map((rfq) => (
+                                        <option key={rfq.id} value={rfq.id}>
+                                            {rfq.rfq_number} — {rfq.company_name}
+                                        </option>
+                                    ))}
                                 </select>
-
+                                {customer?.gstin && <small>Customer GSTIN: {customer.gstin}</small>}
                             </div>
 
-
-                            {/* QUOTATION DATE */}
-
                             <div className="vf-form-group">
-
-                                <label>
-                                    Quotation Date
-                                </label>
-
-
-                                <input
-                                    type="date"
-                                    name="quotation_date"
-                                    value={
-                                        formData.quotation_date
-                                    }
-                                    onChange={
-                                        handleFormChange
-                                    }
-                                    required
-                                />
-
+                                <label htmlFor="quotation_date">Quotation date</label>
+                                <input id="quotation_date" type="date" name="quotation_date" value={form.quotation_date} onChange={handleChange} required />
                             </div>
 
-
-                            {/* VALID UNTIL */}
-
                             <div className="vf-form-group">
-
-                                <label>
-                                    Valid Until
-                                </label>
-
-
-                                <input
-                                    type="date"
-                                    name="valid_until"
-                                    value={
-                                        formData.valid_until
-                                    }
-                                    readOnly
-                                />
-
-
-                                <small>
-                                    Automatically set to 10 days
-                                    from the quotation date.
-                                </small>
-
+                                <label htmlFor="valid_until">Valid until</label>
+                                <input id="valid_until" type="date" name="valid_until" value={form.valid_until} min={form.quotation_date} onChange={handleChange} />
                             </div>
 
-
-                            {/* STATUS */}
-
                             <div className="vf-form-group">
-
-                                <label>
-                                    Status
-                                </label>
-
-
-                                <select
-                                    name="status"
-                                    value={
-                                        formData.status
-                                    }
-                                    onChange={
-                                        handleFormChange
-                                    }
-                                    required
-                                >
-
-                                    <option value="Draft">
-                                        Draft
-                                    </option>
-
-                                    <option value="Sent">
-                                        Sent
-                                    </option>
-
-                                    <option value="Accepted">
-                                        Accepted
-                                    </option>
-
-                                    <option value="Rejected">
-                                        Rejected
-                                    </option>
-
-                                    <option value="Expired">
-                                        Expired
-                                    </option>
-
+                                <label htmlFor="status">Status</label>
+                                <select id="status" name="status" value={form.status} onChange={handleChange}>
+                                    {["Draft", "Sent", "Accepted", "Rejected", "Expired"].map((status) => (
+                                        <option key={status} value={status}>{status}</option>
+                                    ))}
                                 </select>
-
                             </div>
-
                         </div>
 
-                    </div>
-
-
-                    {/* =================================================
-                        ITEMS
-                    ================================================= */}
-
-                    <div className="quotation-form-section">
-
-
-                        <div className="quotation-section-heading">
-
-
-                            <div>
-
-                                <h3>
-                                    Items / Services
-                                </h3>
-
-                                <p>
-                                    Add the items or services included
-                                    in this quotation.
-                                </p>
-
-                            </div>
-
-
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                onClick={
-                                    addItem
-                                }
-                            >
-                                + Add Item
-                            </Button>
-
-                        </div>
-
-
-                        <div className="quotation-items-wrapper">
-
-
-                            {/* HEADER */}
-
-                            <div className="quotation-items-header">
-
-                                <span className="quotation-col-description">
-                                    Description
-                                </span>
-
-                                <span className="quotation-col-quantity">
-                                    Quantity
-                                </span>
-
-                                <span className="quotation-col-unit">
-                                    Unit
-                                </span>
-
-                                <span className="quotation-col-rate">
-                                    Rate
-                                </span>
-
-                                <span className="quotation-col-amount">
-                                    Amount
-                                </span>
-
-                                <span className="quotation-col-action">
-                                    Action
-                                </span>
-
-                            </div>
-
-
-                            {/* ITEMS */}
-
-                            {items.map(
-                                (
-                                    item,
-                                    index
-                                ) => (
-
-                                    <div
-                                        className="quotation-item-row"
-                                        key={index}
+                        {company?.gst_registered && (
+                            <div className="vf-form-row">
+                                <div className="vf-form-group">
+                                    <label htmlFor="place_of_supply">Place of supply</label>
+                                    <select
+                                        id="place_of_supply"
+                                        name="place_of_supply"
+                                        value={form.place_of_supply}
+                                        onChange={handleChange}
                                     >
-
-
-                                        {/* DESCRIPTION */}
-
-                                        <div className="quotation-col-description">
-
-                                            <input
-                                                type="text"
-                                                value={
-                                                    item.description
-                                                }
-                                                onChange={
-                                                    (event) =>
-                                                        handleItemChange(
-                                                            index,
-                                                            "description",
-                                                            event.target.value
-                                                        )
-                                                }
-                                                placeholder="Enter item or service"
-                                                required
-                                            />
-
-                                        </div>
-
-
-                                        {/* QUANTITY */}
-
-                                        <div className="quotation-col-quantity">
-
-                                            <input
-                                                type="number"
-                                                value={
-                                                    item.quantity
-                                                }
-                                                onChange={
-                                                    (event) =>
-                                                        handleItemChange(
-                                                            index,
-                                                            "quantity",
-                                                            event.target.value
-                                                        )
-                                                }
-                                                placeholder="0"
-                                                min="0"
-                                                step="0.01"
-                                                required
-                                            />
-
-                                        </div>
-
-
-                                        {/* UNIT */}
-
-                                        <div className="quotation-col-unit">
-
-                                            <input
-                                                type="text"
-                                                value={
-                                                    item.unit
-                                                }
-                                                onChange={
-                                                    (event) =>
-                                                        handleItemChange(
-                                                            index,
-                                                            "unit",
-                                                            event.target.value
-                                                        )
-                                                }
-                                                placeholder="Nos"
-                                                required
-                                            />
-
-                                        </div>
-
-
-                                        {/* RATE */}
-
-                                        <div className="quotation-col-rate">
-
-                                            <input
-                                                type="number"
-                                                value={
-                                                    item.rate
-                                                }
-                                                onChange={
-                                                    (event) =>
-                                                        handleItemChange(
-                                                            index,
-                                                            "rate",
-                                                            event.target.value
-                                                        )
-                                                }
-                                                placeholder="0.00"
-                                                min="0"
-                                                step="0.01"
-                                                required
-                                            />
-
-                                        </div>
-
-
-                                        {/* AMOUNT */}
-
-                                        <div className="quotation-col-amount quotation-calculated-amount">
-
-                                            ₹
-                                            {formatMoney(
-                                                getItemAmount(
-                                                    item
-                                                )
-                                            )}
-
-                                        </div>
-
-
-                                        {/* REMOVE */}
-
-                                        <div className="quotation-col-action">
-
-                                            <button
-                                                type="button"
-                                                className="quotation-remove-item"
-                                                onClick={() =>
-                                                    removeItem(
-                                                        index
-                                                    )
-                                                }
-                                                title="Remove item"
-                                            >
-                                                ×
-                                            </button>
-
-                                        </div>
-
-                                    </div>
-
-                                )
-                            )}
-
-                        </div>
-
-                    </div>
-
-
-                    {/* =================================================
-                        TOTALS
-                    ================================================= */}
-
-                    <div className="quotation-totals-section">
-
-
-                        {/* SUBTOTAL */}
-
-                        <div className="quotation-total-row">
-
-                            <span>
-                                Subtotal
-                            </span>
-
-                            <strong>
-                                ₹
-                                {formatMoney(
-                                    subtotal
-                                )}
-                            </strong>
-
-                        </div>
-
-
-                        {/* ADJUSTMENT */}
-
-                        <div className="quotation-total-row">
-
-
-                            <div className="quotation-adjustment-label">
-
-                                <span>
-                                    Adjustment
-                                </span>
-
-                                <small>
-                                    Enter positive or negative amount
-                                </small>
-
+                                        <option value="">
+                                            {customer?.state_code
+                                                ? `Customer's state (${states.find((s) => s.code === customer.state_code)?.name || customer.state_code})`
+                                                : "Same as my state"}
+                                        </option>
+                                        {states.map((state) => (
+                                            <option key={state.code} value={state.code}>
+                                                {state.code} — {state.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <small>Decides CGST + SGST (same state) or IGST (other state).</small>
+                                </div>
                             </div>
-
-
-                            <div className="quotation-adjustment-input">
-
-                                <input
-                                    type="number"
-                                    name="adjustment"
-                                    value={
-                                        formData.adjustment
-                                    }
-                                    onChange={
-                                        handleFormChange
-                                    }
-                                    step="0.01"
-                                />
-
-                            </div>
-
-
-                        </div>
-
-
-                        {/* GRAND TOTAL */}
-
-                        <div className="quotation-total-row quotation-grand-total">
-
-                            <span>
-                                Grand Total
-                            </span>
-
-                            <strong>
-                                ₹
-                                {formatMoney(
-                                    grandTotal
-                                )}
-                            </strong>
-
-                        </div>
-
+                        )}
                     </div>
-
-
-                    {/* =================================================
-                        NOTES
-                    ================================================= */}
 
                     <div className="quotation-form-section">
-
-
                         <div className="quotation-section-heading">
-
-                            <h3>
-                                Notes
-                            </h3>
-
-                            <p>
-                                Default professional notes.
-                                You can customize them if required.
-                            </p>
-
+                            <h3>Items / services</h3>
+                            <p>Pick a saved item from your catalog or type your own.</p>
                         </div>
-
-
-                        <div className="vf-form-group">
-
-                            <textarea
-                                name="notes"
-                                value={
-                                    formData.notes
-                                }
-                                onChange={
-                                    handleFormChange
-                                }
-                                rows="5"
-                            />
-
-                        </div>
-
+                        <LineItemsEditor
+                            items={items}
+                            onChange={setItems}
+                            adjustment={form.adjustment}
+                            onAdjustmentChange={(value) => setField("adjustment", value)}
+                            supplyType={supplyType}
+                            roundOff={company?.round_off_enabled !== false}
+                            catalog={catalog}
+                        />
                     </div>
-
-
-                    {/* =================================================
-                        TERMS
-                    ================================================= */}
 
                     <div className="quotation-form-section">
-
-
                         <div className="quotation-section-heading">
-
-                            <h3>
-                                Terms &amp; Conditions
-                            </h3>
-
-                            <p>
-                                Default quotation terms.
-                                You can customize them if required.
-                            </p>
-
+                            <h3>Notes &amp; terms</h3>
+                            <p>Defaults come from your company settings.</p>
                         </div>
-
-
                         <div className="vf-form-group">
-
-                            <textarea
-                                name="terms_conditions"
-                                value={
-                                    formData.terms_conditions
-                                }
-                                onChange={
-                                    handleFormChange
-                                }
-                                rows="8"
-                            />
-
+                            <label htmlFor="notes">Notes</label>
+                            <textarea id="notes" name="notes" value={form.notes} onChange={handleChange} rows="4" />
                         </div>
-
+                        <div className="vf-form-group">
+                            <label htmlFor="terms_conditions">Terms &amp; conditions</label>
+                            <textarea id="terms_conditions" name="terms_conditions" value={form.terms_conditions} onChange={handleChange} rows="6" />
+                        </div>
                     </div>
-
-
-                    {/* =================================================
-                        ACTIONS
-                    ================================================= */}
 
                     <div className="vf-form-actions">
-
-
-                        <Button
-                            variant="secondary"
-                            type="button"
-                            onClick={
-                                handleCancel
-                            }
-                            disabled={
-                                saving
-                            }
-                        >
-                            Cancel
+                        <Button variant="secondary" onClick={() => navigate("/quotations")}>Cancel</Button>
+                        <Button type="submit" disabled={saving}>
+                            {saving ? "Saving…" : isEditMode ? "Update quotation" : "Create quotation"}
                         </Button>
-
-
-                        <Button
-                            type="submit"
-                            disabled={
-                                saving
-                            }
-                        >
-
-                            {saving
-
-                                ? (
-                                    isEditMode
-                                        ? "Updating..."
-                                        : "Saving..."
-                                )
-
-                                : (
-                                    isEditMode
-                                        ? "Update Quotation"
-                                        : "Save Quotation"
-                                )}
-
-                        </Button>
-
                     </div>
-
                 </form>
-
             </div>
-
         </MainLayout>
     );
 }
-
 
 export default CreateQuotation;

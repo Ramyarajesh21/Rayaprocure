@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import MainLayout from "../../layouts/MainLayout";
 import PageHeader from "../../components/PageHeader";
@@ -8,9 +9,25 @@ import StatusBadge from "../../components/StatusBadge";
 import Button from "../../components/Button";
 import Modal from "../../components/Modal";
 import { useToast } from "../../components/Toast/ToastContext";
+import JobCosts from "./JobCosts";
+import { formatMoney } from "../../utils/format";
 import "./Jobs.css";
 
+const JOB_STATUSES = ["Not Started", "Ongoing", "On Hold", "Completed"];
+
+const EMPTY_JOB = {
+    quotation_id: "",
+    job_name: "",
+    start_date: "",
+    status: "Ongoing",
+    due_date: "",
+    assigned_to: "",
+    notes: "",
+};
+
 function Jobs() {
+    const navigate = useNavigate();
+    const [team, setTeam] = useState([]);
     const [jobs, setJobs] = useState([]);
     const [quotations, setQuotations] = useState([]);
 
@@ -25,12 +42,7 @@ function Jobs() {
     const [editingJobId, setEditingJobId] = useState(null);
     const [selectedJob, setSelectedJob] = useState(null);
 
-    const [formData, setFormData] = useState({
-        quotation_id: "",
-        job_name: "",
-        start_date: "",
-        status: "Ongoing",
-    });
+    const [formData, setFormData] = useState(EMPTY_JOB);
 
     const { showToast } = useToast();
 
@@ -67,6 +79,7 @@ function Jobs() {
     useEffect(() => {
         fetchJobs();
         fetchQuotations();
+        api.get("/api/users").then(({ data }) => setTeam(data.filter((user) => user.is_active))).catch(() => {});
     }, []);
 
     const handleInputChange = (event) => {
@@ -81,12 +94,7 @@ function Jobs() {
     const openCreateForm = () => {
         setEditingJobId(null);
 
-        setFormData({
-            quotation_id: "",
-            job_name: "",
-            start_date: "",
-            status: "Ongoing",
-        });
+        setFormData(EMPTY_JOB);
 
         setShowForm(true);
     };
@@ -101,6 +109,9 @@ function Jobs() {
                 ? job.start_date.substring(0, 10)
                 : "",
             status: job.status,
+            due_date: job.due_date ? job.due_date.substring(0, 10) : "",
+            assigned_to: job.assigned_to ? String(job.assigned_to) : "",
+            notes: job.notes || "",
         });
 
         setShowForm(true);
@@ -110,12 +121,7 @@ function Jobs() {
         setShowForm(false);
         setEditingJobId(null);
 
-        setFormData({
-            quotation_id: "",
-            job_name: "",
-            start_date: "",
-            status: "Ongoing",
-        });
+        setFormData(EMPTY_JOB);
     };
 
     const handleSubmit = async (event) => {
@@ -152,6 +158,9 @@ function Jobs() {
             job_name: jobName,
             start_date: formData.start_date,
             status: formData.status,
+            due_date: formData.due_date || null,
+            assigned_to: formData.assigned_to ? Number(formData.assigned_to) : null,
+            notes: formData.notes.trim(),
         };
 
         try {
@@ -298,6 +307,33 @@ function Jobs() {
                     : "—",
         },
         {
+            key: "assignee_name",
+            label: "Assigned",
+            render: (job) => job.assignee_name || "—",
+        },
+        {
+            key: "due_date",
+            label: "Due",
+            render: (job) => {
+                if (!job.due_date) return "—";
+                const late = job.status !== "Completed" && new Date(job.due_date) < new Date(new Date().toDateString());
+                return (
+                    <span style={late ? { color: "var(--color-danger)", fontWeight: 700 } : undefined}>
+                        {new Date(job.due_date).toLocaleDateString("en-IN")}
+                    </span>
+                );
+            },
+        },
+        {
+            key: "margin",
+            label: "Margin",
+            render: (job) => (
+                <span style={{ color: job.margin < 0 ? "var(--color-danger)" : undefined }}>
+                    ₹{formatMoney(job.margin)}
+                </span>
+            ),
+        },
+        {
             key: "status",
             label: "Status",
             render: (job) => (
@@ -327,6 +363,16 @@ function Jobs() {
                         }
                     >
                         Edit
+                    </button>
+
+                    <button
+                        type="button"
+                        className="vf-action-button vf-action-view"
+                        onClick={() =>
+                            navigate(`/invoices/create?job=${job.id}`)
+                        }
+                    >
+                        Invoice
                     </button>
 
                     <button
@@ -382,13 +428,11 @@ function Jobs() {
                             All Status
                         </option>
 
-                        <option value="Ongoing">
-                            Ongoing
-                        </option>
-
-                        <option value="Completed">
-                            Completed
-                        </option>
+                        {JOB_STATUSES.map((status) => (
+                            <option key={status} value={status}>
+                                {status}
+                            </option>
+                        ))}
                     </select>
 
                 </div>
@@ -527,17 +571,56 @@ function Jobs() {
                                             handleInputChange
                                         }
                                     >
-                                        <option value="Ongoing">
-                                            Ongoing
-                                        </option>
-
-                                        <option value="Completed">
-                                            Completed
-                                        </option>
+                                        {JOB_STATUSES.map((status) => (
+                                            <option key={status} value={status}>
+                                                {status}
+                                            </option>
+                                        ))}
                                     </select>
 
                                 </div>
 
+                            </div>
+
+                            <div className="vf-form-row">
+
+                                <div className="vf-form-group">
+                                    <label>Due Date</label>
+                                    <input
+                                        type="date"
+                                        name="due_date"
+                                        value={formData.due_date}
+                                        min={formData.start_date}
+                                        onChange={handleInputChange}
+                                    />
+                                </div>
+
+                                <div className="vf-form-group">
+                                    <label>Assigned To</label>
+                                    <select
+                                        name="assigned_to"
+                                        value={formData.assigned_to}
+                                        onChange={handleInputChange}
+                                    >
+                                        <option value="">Unassigned</option>
+                                        {team.map((member) => (
+                                            <option key={member.id} value={member.id}>
+                                                {member.name} ({member.role})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                            </div>
+
+                            <div className="vf-form-group">
+                                <label>Notes</label>
+                                <textarea
+                                    name="notes"
+                                    rows="3"
+                                    value={formData.notes}
+                                    onChange={handleInputChange}
+                                />
                             </div>
 
                             <div className="vf-form-actions">
@@ -628,7 +711,30 @@ function Jobs() {
                                 </strong>
                             </div>
 
+                            <div className="vf-view-item">
+                                <span>Assigned To</span>
+                                <strong>{selectedJob.assignee_name || "—"}</strong>
+                            </div>
+
+                            <div className="vf-view-item">
+                                <span>Due Date</span>
+                                <strong>
+                                    {selectedJob.due_date
+                                        ? new Date(selectedJob.due_date).toLocaleDateString("en-IN")
+                                        : "—"}
+                                </strong>
+                            </div>
+
+                            {selectedJob.notes && (
+                                <div className="vf-view-item">
+                                    <span>Notes</span>
+                                    <strong style={{ whiteSpace: "pre-line" }}>{selectedJob.notes}</strong>
+                                </div>
+                            )}
+
                         </div>
+
+                        <JobCosts job={selectedJob} onChanged={fetchJobs} />
                     </Modal>
                 )}
 

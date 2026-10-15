@@ -3,6 +3,8 @@ import MainLayout from "../../layouts/MainLayout";
 import PageHeader from "../../components/PageHeader";
 import StatusBadge from "../../components/StatusBadge";
 import api from "../../services/api";
+import Button from "../../components/Button";
+import Insights from "./Insights";
 import "./Reports.css";
 
 function Reports() {
@@ -26,6 +28,12 @@ function Reports() {
 
     const formatCurrency = (value) => {
         return `₹${Number(value || 0).toLocaleString("en-IN")}`;
+    };
+
+    const downloadReport = async (type) => {
+        const response = await api.get(`/reports/export/${type}`, { responseType: "blob" });
+        const url = URL.createObjectURL(response.data);
+        const link = document.createElement("a"); link.href = url; link.download = `${type}-report.csv`; link.click(); URL.revokeObjectURL(url);
     };
 
     if (loading) {
@@ -54,6 +62,7 @@ function Reports() {
                     eyebrow="BUSINESS INSIGHTS"
                     title="Reports"
                     description="Overview of your vendor operations and financial activity."
+                    action={<div className="report-export-actions"><Button variant="secondary" onClick={() => downloadReport("invoices")}>Export invoices</Button><Button onClick={() => downloadReport("payments")}>Export payments</Button></div>}
                 />
 
                 {/* Summary Cards */}
@@ -260,6 +269,9 @@ function Reports() {
                     </div>
 
                 </div>
+
+
+                <Insights />
 
             </div>
         </MainLayout>

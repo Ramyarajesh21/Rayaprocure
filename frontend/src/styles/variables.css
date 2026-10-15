@@ -37,18 +37,18 @@
        APPLICATION BACKGROUND
     ===================================================== */
 
-    --color-background: #f3f4f6;
+    --color-background: #e8eef6;
     --color-surface: #ffffff;
-    --color-surface-soft: #f8fafc;
+    --color-surface-soft: #f1f5fa;
 
 
     /* =====================================================
        TYPOGRAPHY
     ===================================================== */
 
-    --color-text-primary: #111827;
-    --color-text-secondary: #4b5563;
-    --color-text-muted: #6b7280;
+    --color-text-primary: #17263b;
+    --color-text-secondary: #526176;
+    --color-text-muted: #758298;
 
     --color-text-light: #f9fafb;
     --color-text-light-muted: rgba(249, 250, 251, 0.58);
@@ -58,8 +58,8 @@
        BORDERS
     ===================================================== */
 
-    --color-border: #dfe3e8;
-    --color-border-light: #e9edf2;
+    --color-border: #d0dbe8;
+    --color-border-light: #e0e8f1;
 
 
     /* =====================================================
@@ -105,23 +105,23 @@
        THEME SPECIFIC
     ===================================================== */
 
-    --theme-sidebar: #ffffff;
-    --theme-navbar: #ffffff;
+    --theme-sidebar: #0b1d36;
+    --theme-navbar: #0b1d36;
     --theme-details: #ffffff;
-    --theme-input: #ffffff;
+    --theme-input: #fbfcfe;
     --theme-modal: #ffffff;
 
-    --theme-hover: rgba(37, 99, 235, 0.06);
+    --theme-hover: rgba(37, 99, 235, 0.055);
     --theme-highlight: #2563eb;
-    --theme-highlight-soft: rgba(37, 99, 235, 0.08);
+    --theme-highlight-soft: rgba(37, 99, 235, 0.075);
 
     --theme-overlay: rgba(15, 23, 42, 0.42);
 
     --theme-glass:
-        rgba(255, 255, 255, 0.78);
+        rgba(255, 255, 255, 0.12);
 
     --theme-highlight-border:
-        rgba(37, 99, 235, 0.22);
+        rgba(37, 99, 235, 0.20);
 }
 
 

@@ -7,6 +7,8 @@ import { ToastProvider } from "./components/Toast/ToastContext";
 import "./styles/variables.css";
 import "./styles/global.css";
 import "./styles/responsive.css";
+import "./styles/premium.css";
+import "./styles/platform.css";
 
 
 // =========================================================
@@ -33,3 +35,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         </ToastProvider>
     </React.StrictMode>
 );
+
+
+// =========================================================
+// PWA: install support + offline app shell (production only)
+// =========================================================
+
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+    });
+}

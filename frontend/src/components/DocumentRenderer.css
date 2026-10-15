@@ -1,0 +1,133 @@
+/* A4 sheet. Colours are fixed (not theme variables) so the PDF looks the same in dark mode. */
+.doc-root { width: 100%; overflow-x: auto; }
+
+.doc-page {
+    box-sizing: border-box;
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    padding: 14mm 14mm 12mm;
+    background: #ffffff;
+    color: #1c2733;
+    line-height: 1.45;
+    box-shadow: 0 6px 24px rgba(15, 30, 50, 0.14);
+}
+.doc-page * { box-sizing: border-box; }
+.doc-page h1, .doc-page h2, .doc-page h3, .doc-page p { margin: 0; }
+.doc-page p { margin-top: 2px; }
+.doc-pre { white-space: pre-line; }
+
+.doc-banner {
+    margin: -14mm -14mm 10px;
+    padding: 6px 14mm;
+    background: var(--doc-accent);
+    color: #fff;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+.doc-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--doc-accent);
+}
+.doc-logo-right .doc-company { flex-direction: row-reverse; text-align: right; }
+.doc-logo-center .doc-head { flex-direction: column; align-items: center; text-align: center; }
+.doc-company { display: flex; gap: 12px; align-items: flex-start; }
+.doc-logo { max-width: 72px; max-height: 72px; object-fit: contain; }
+.doc-company h1 { font-size: 1.6em; color: var(--doc-accent); }
+.doc-title-block { text-align: right; min-width: 200px; }
+.doc-title-block h2 { font-size: 1.7em; letter-spacing: 0.06em; color: var(--doc-accent); margin-bottom: 6px; }
+.doc-title-block table { margin-left: auto; border-collapse: collapse; }
+.doc-title-block td { padding: 1px 0 1px 12px; }
+.doc-title-block td:first-child { color: #5b6b7b; }
+.doc-title-block td:last-child { font-weight: 700; text-align: right; }
+
+.doc-parties {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin: 14px 0;
+}
+.doc-parties h3, .doc-block h3, .doc-bank h3 {
+    margin-bottom: 4px;
+    font-size: 0.78em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--doc-accent);
+}
+
+.doc-items { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.doc-items th {
+    padding: 7px 6px;
+    background: var(--doc-accent);
+    color: #fff;
+    font-size: 0.85em;
+    text-align: left;
+}
+.doc-items td { padding: 7px 6px; border-bottom: 1px solid #e3e8ee; vertical-align: top; }
+.doc-items .r { text-align: right; white-space: nowrap; }
+.doc-items .c { text-align: center; width: 28px; }
+
+.doc-summary { display: flex; justify-content: space-between; gap: 20px; margin-top: 14px; }
+.doc-summary-left { flex: 1; }
+.doc-bank { margin-top: 10px; padding: 8px 10px; border: 1px solid #e3e8ee; border-radius: 4px; }
+.doc-irn { margin-top: 8px; word-break: break-all; font-size: 0.85em; }
+.doc-totals { min-width: 240px; border-collapse: collapse; align-self: flex-start; }
+.doc-totals td { padding: 4px 0 4px 16px; }
+.doc-totals td:last-child { text-align: right; white-space: nowrap; }
+.doc-totals .doc-grand td {
+    padding-top: 8px;
+    border-top: 2px solid var(--doc-accent);
+    font-size: 1.15em;
+    font-weight: 700;
+    color: var(--doc-accent);
+}
+
+.doc-block { margin-top: 14px; }
+.doc-signature {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    margin-top: 28px;
+}
+.doc-signature img { max-height: 56px; max-width: 160px; }
+.doc-footer {
+    margin-top: 18px;
+    padding-top: 8px;
+    border-top: 1px solid #e3e8ee;
+    text-align: center;
+    color: #5b6b7b;
+    font-size: 0.85em;
+}
+
+.doc-custom { padding: 12mm; }
+
+/* On a phone the A4 sheet scrolls sideways inside its container. */
+@media (max-width: 860px) {
+    .doc-root { padding-bottom: 8px; }
+}
+@media print {
+    .doc-page { box-shadow: none; margin: 0; }
+}
+
+.doc-response-note {
+    margin: 0 0 14px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--color-success-bg);
+    color: var(--color-success);
+    font-size: 13px;
+}
+@media print {
+    .sidebar, .navbar, .quotation-preview-toolbar, .attachments-panel, .doc-response-note { display: none !important; }
+    .quotation-document-wrapper { padding: 0 !important; }
+    body { background: #fff !important; }
+}
+
+.doc-fit { margin: 0 auto; }
+.doc-fit-inner { width: max-content; }
+.doc-root { overflow-x: visible; }

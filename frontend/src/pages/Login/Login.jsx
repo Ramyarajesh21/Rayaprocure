@@ -4,8 +4,8 @@
    ========================================================= */
 
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import api from "../../services/api";
 import "./Login.css";
 import loginBg from "../../assets/images/login-bg.png";
 import rayaprocureLogo from "../../assets/icons/rayaprocure-logo.png";
@@ -16,8 +16,15 @@ function Login() {
 
     const [showPassword, setShowPassword] = useState(false);
 
+    const [mode, setMode] = useState("login");
+    const [companyName, setCompanyName] = useState("");
+    const [fullName, setFullName] = useState("");
+    const [email, setEmail] = useState("");
+
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+
+    const isSignup = mode === "signup";
 
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -31,13 +38,21 @@ function Login() {
 
         try {
 
-            const response = await axios.post(
-                "http://127.0.0.1:5000/api/auth/login",
-                {
+            const response = isSignup
+                ? await api.post("/api/auth/register", {
+                    company_name: companyName.trim(),
+                    name: fullName.trim(),
+                    email: email.trim(),
                     username: username.trim(),
                     password: password
-                }
-            );
+                })
+                : await api.post(
+                    "/api/auth/login",
+                    {
+                        username: username.trim(),
+                        password: password
+                    }
+                );
 
             const user = response.data.user;
 
@@ -112,11 +127,13 @@ function Login() {
                 <div className="login-heading">
 
                     <h1>
-                        Welcome back
+                        {isSignup ? "Create your workspace" : "Welcome back"}
                     </h1>
 
                     <p>
-                        Sign in to continue to your workspace.
+                        {isSignup
+                            ? "Start sending GST-ready quotations and invoices in minutes."
+                            : "Sign in to continue to your workspace."}
                     </p>
 
                 </div>
@@ -129,12 +146,54 @@ function Login() {
                     onSubmit={handleSubmit}
                 >
 
+                    {isSignup && (
+                        <>
+                            <div className="login-field">
+                                <label htmlFor="companyName">Company name</label>
+                                <input
+                                    id="companyName"
+                                    type="text"
+                                    placeholder="Your company"
+                                    value={companyName}
+                                    onChange={(event) => setCompanyName(event.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="login-field">
+                                <label htmlFor="fullName">Your name</label>
+                                <input
+                                    id="fullName"
+                                    type="text"
+                                    autoComplete="name"
+                                    placeholder="Your full name"
+                                    value={fullName}
+                                    onChange={(event) => setFullName(event.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="login-field">
+                                <label htmlFor="signupEmail">Work email</label>
+                                <input
+                                    id="signupEmail"
+                                    type="email"
+                                    autoComplete="email"
+                                    placeholder="you@company.com"
+                                    value={email}
+                                    onChange={(event) => setEmail(event.target.value)}
+                                    required
+                                />
+                            </div>
+                        </>
+                    )}
+
                     {/* USERNAME */}
 
                     <div className="login-field">
 
                         <label htmlFor="email">
-                            Email / Username
+                            {isSignup ? "Choose a username" : "Email / Username"}
                         </label>
 
                         <input
@@ -170,7 +229,8 @@ function Login() {
                                         : "password"
                                 }
                                 placeholder="Enter your password"
-                                autoComplete="current-password"
+                                autoComplete={isSignup ? "new-password" : "current-password"}
+                                minLength={isSignup ? 8 : undefined}
                                 value={password}
                                 onChange={(event) =>
                                     setPassword(event.target.value)
@@ -252,8 +312,22 @@ function Login() {
                         disabled={loading}
                     >
                         {loading
-                            ? "Signing In..."
-                            : "Sign In"}
+                            ? (isSignup ? "Creating workspace..." : "Signing In...")
+                            : (isSignup ? "Create workspace" : "Sign In")}
+                    </button>
+
+                    <button
+                        type="button"
+                        className="login-forgot"
+                        style={{ alignSelf: "center", marginTop: 10 }}
+                        onClick={() => {
+                            setError("");
+                            setMode(isSignup ? "login" : "signup");
+                        }}
+                    >
+                        {isSignup
+                            ? "Already have an account? Sign in"
+                            : "New company? Create a workspace"}
                     </button>
 
                 </form>

@@ -1,0 +1,21 @@
+.send-form { display: grid; gap: 12px; }
+.send-form label { display: grid; gap: 6px; font-size: 12px; font-weight: 700; color: var(--color-text-secondary); }
+.send-form input:not([type="checkbox"]),
+.send-form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--theme-input);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-weight: 400;
+}
+.send-check { display: flex !important; align-items: center; gap: 8px !important; }
+.send-hint { margin: 0; font-size: 12px; color: var(--color-text-muted); }
+.send-history { display: grid; gap: 4px; font-size: 12px; color: var(--color-text-secondary); }
+.send-pill { padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.send-sent { background: var(--color-success-bg); color: var(--color-success); }
+.send-failed { background: var(--color-danger-bg); color: var(--color-danger); }
+.send-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+@media (max-width: 600px) { .send-actions .vf-button { flex: 1; } }

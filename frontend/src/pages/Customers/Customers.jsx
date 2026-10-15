@@ -10,8 +10,22 @@ import Modal from "../../components/Modal";
 import { useToast } from "../../components/Toast/ToastContext";
 
 import api from "../../services/api";
+import { useStates } from "../../services/company";
 
 import "./Customers.css";
+
+const EMPTY_CUSTOMER = {
+        company_name: "",
+        contact_name: "",
+        phone: "",
+        email: "",
+        gstin: "",
+        pan: "",
+        state_code: "",
+        billing_address: "",
+        shipping_address: "",
+        payment_terms_days: "",
+    };
 
 function Customers() {
 
@@ -23,12 +37,9 @@ function Customers() {
 
     const [editingCustomerId, setEditingCustomerId] = useState(null);
 
-    const [formData, setFormData] = useState({
-        company_name: "",
-        contact_name: "",
-        phone: "",
-        email: "",
-    });
+    const states = useStates();
+
+    const [formData, setFormData] = useState(EMPTY_CUSTOMER);
 
     useEffect(() => {
         fetchCustomers();
@@ -59,6 +70,17 @@ function Customers() {
 
         const { name, value } = event.target;
 
+        if (name === "gstin") {
+            const gstin = value.toUpperCase().replace(/\s/g, "");
+            const known = gstin.length >= 2 && states.some((state) => state.code === gstin.slice(0, 2));
+            setFormData({
+                ...formData,
+                gstin,
+                state_code: known ? gstin.slice(0, 2) : formData.state_code,
+            });
+            return;
+        }
+
         setFormData({
             ...formData,
             [name]: value,
@@ -69,12 +91,7 @@ function Customers() {
 
         setEditingCustomerId(null);
 
-        setFormData({
-            company_name: "",
-            contact_name: "",
-            phone: "",
-            email: "",
-        });
+        setFormData(EMPTY_CUSTOMER);
 
         setShowModal(true);
     };
@@ -88,6 +105,12 @@ function Customers() {
             contact_name: customer.contact_name || "",
             phone: customer.phone || "",
             email: customer.email || "",
+            gstin: customer.gstin || "",
+            pan: customer.pan || "",
+            state_code: customer.state_code || "",
+            billing_address: customer.billing_address || "",
+            shipping_address: customer.shipping_address || "",
+            payment_terms_days: customer.payment_terms_days ?? "",
         });
 
         setShowModal(true);
@@ -124,12 +147,7 @@ function Customers() {
                 );
             }
 
-            setFormData({
-                company_name: "",
-                contact_name: "",
-                phone: "",
-                email: "",
-            });
+            setFormData(EMPTY_CUSTOMER);
 
             setEditingCustomerId(null);
             setShowModal(false);
@@ -196,7 +214,7 @@ function Customers() {
 
 
     const filteredCustomers = customers.filter((customer) =>
-        `${customer.company_name} ${customer.contact_name} ${customer.phone} ${customer.email}`
+        `${customer.company_name} ${customer.contact_name} ${customer.phone} ${customer.email} ${customer.gstin || ""}`
             .toLowerCase()
             .includes(search.toLowerCase())
     );
@@ -226,6 +244,12 @@ function Customers() {
         {
             key: "email",
             label: "Email",
+        },
+
+        {
+            key: "gstin",
+            label: "GSTIN",
+            render: (row) => row.gstin || "—",
         },
 
         {
@@ -369,7 +393,6 @@ function Customers() {
                                 value={formData.contact_name}
                                 onChange={handleChange}
                                 placeholder="Enter contact person"
-                                required
                             />
 
                         </div>
@@ -387,7 +410,6 @@ function Customers() {
                                 value={formData.phone}
                                 onChange={handleChange}
                                 placeholder="Enter phone number"
-                                required
                             />
 
                         </div>
@@ -409,6 +431,83 @@ function Customers() {
 
                         </div>
 
+
+
+                        <div className="customer-form-field">
+                            <label>GSTIN</label>
+                            <input
+                                type="text"
+                                name="gstin"
+                                value={formData.gstin}
+                                onChange={handleChange}
+                                placeholder="15-character GSTIN (optional)"
+                                maxLength={15}
+                            />
+                        </div>
+
+                        <div className="customer-form-field">
+                            <label>PAN</label>
+                            <input
+                                type="text"
+                                name="pan"
+                                value={formData.pan}
+                                onChange={(event) =>
+                                    setFormData({ ...formData, pan: event.target.value.toUpperCase() })
+                                }
+                                placeholder="ABCDE1234F"
+                                maxLength={10}
+                            />
+                        </div>
+
+                        <div className="customer-form-field">
+                            <label>State (place of supply)</label>
+                            <select
+                                name="state_code"
+                                value={formData.state_code}
+                                onChange={handleChange}
+                            >
+                                <option value="">Select state</option>
+                                {states.map((state) => (
+                                    <option key={state.code} value={state.code}>
+                                        {state.code} — {state.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="customer-form-field">
+                            <label>Billing address</label>
+                            <textarea
+                                name="billing_address"
+                                value={formData.billing_address}
+                                onChange={handleChange}
+                                rows="3"
+                            />
+                        </div>
+
+                        <div className="customer-form-field">
+                            <label>Shipping address</label>
+                            <textarea
+                                name="shipping_address"
+                                value={formData.shipping_address}
+                                onChange={handleChange}
+                                rows="2"
+                                placeholder="Leave blank if same as billing"
+                            />
+                        </div>
+
+                        <div className="customer-form-field">
+                            <label>Payment terms (days)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                max="365"
+                                name="payment_terms_days"
+                                value={formData.payment_terms_days}
+                                onChange={handleChange}
+                                placeholder="Uses your default if blank"
+                            />
+                        </div>
 
                         <div className="customer-form-actions">
 

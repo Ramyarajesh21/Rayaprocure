@@ -1,9 +1,6 @@
 /* =========================================================
    VENDORFLOW SETTINGS PAGE
-   Themes:
-   1. Default
-   2. Dark Olive Green
-   3. Dark Navy Blue
+   Themes: Navy & Slate Light, Midnight Navy
    ========================================================= */
 
 
@@ -35,7 +32,7 @@
    ========================================================= */
 
 .settings-sidebar {
-    background: var(--color-surface);
+    background: color-mix(in srgb, var(--color-surface) 92%, var(--color-primary) 8%);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     padding: 18px;
@@ -68,7 +65,7 @@
     background: transparent;
     color: var(--color-text-primary);
     font-family: inherit;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     text-align: left;
     cursor: pointer;
@@ -82,15 +79,18 @@
 }
 
 .settings-menu-item.active {
-    background: var(--color-primary);
-    color: #ffffff;
+    background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+    color: var(--color-primary);
+    box-shadow: inset 3px 0 0 var(--color-accent);
+    font-weight: 700;
 }
 
 .settings-menu-icon {
     width: 21px;
     display: flex;
     justify-content: center;
-    font-size: 15px;
+    font-size: 17px;
+    color: currentColor;
 }
 
 
@@ -106,7 +106,7 @@
     background: var(--color-surface);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
-    padding: 28px;
+    padding: 32px;
     box-shadow: var(--shadow-xs);
 }
 
@@ -275,7 +275,7 @@
 
 .theme-options {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 18px;
 }
 
@@ -363,15 +363,16 @@
 }
 
 .theme-preview-light .theme-preview-sidebar {
-    background: #190410;
+    background: #0b1d36;
 }
 
 .theme-preview-light .theme-preview-content {
-    background: #f5f2ef;
+    background: #e8eef6;
 }
 
 .theme-preview-light .theme-preview-content div {
-    background: #d0ad70;
+    background: #ffffff;
+    border-left: 3px solid #2f64db;
 }
 
 
@@ -379,41 +380,21 @@
    DARK OLIVE GREEN PREVIEW
    ========================================================= */
 
-.theme-preview-olive {
-    background: #1b231a;
+.theme-preview-dark {
+    background: #111a2c;
 }
 
-.theme-preview-olive .theme-preview-sidebar {
-    background: #10160f;
+.theme-preview-dark .theme-preview-sidebar {
+    background: #080f1c;
 }
 
-.theme-preview-olive .theme-preview-content {
-    background: #1b231a;
+.theme-preview-dark .theme-preview-content {
+    background: #111a2c;
 }
 
-.theme-preview-olive .theme-preview-content div {
-    background: #8fa66b;
-}
-
-
-/* =========================================================
-   DARK NAVY BLUE PREVIEW
-   ========================================================= */
-
-.theme-preview-navy {
-    background: #111c2d;
-}
-
-.theme-preview-navy .theme-preview-sidebar {
-    background: #09111f;
-}
-
-.theme-preview-navy .theme-preview-content {
-    background: #111c2d;
-}
-
-.theme-preview-navy .theme-preview-content div {
-    background: #6f9ed8;
+.theme-preview-dark .theme-preview-content div {
+    background: #24344b;
+    border-left: 3px solid #6c8ff5;
 }
 
 
@@ -467,6 +448,14 @@
     color: #ffffff;
 }
 
+.theme-option:focus-visible,
+.settings-menu-item:focus-visible,
+.settings-primary-button:focus-visible,
+.settings-secondary-button:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+    outline-offset: 2px;
+}
+
 
 /* =========================================================
    NOTIFICATIONS
@@ -480,7 +469,7 @@
     overflow: hidden;
 }
 
-.notification-item {
+.settings-notification-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -490,22 +479,22 @@
     background: var(--color-surface);
 }
 
-.notification-item:last-child {
+.settings-notification-item:last-child {
     border-bottom: none;
 }
 
-.notification-item > div {
+.settings-notification-item > div {
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-.notification-item strong {
+.settings-notification-item strong {
     color: var(--color-text-primary);
     font-size: 13px;
 }
 
-.notification-item span {
+.settings-notification-item span {
     color: var(--color-text-secondary);
     font-size: 11px;
 }
@@ -573,6 +562,55 @@
     color: var(--color-text-secondary);
     font-size: 12px;
     line-height: 1.5;
+}
+
+.settings-team-link {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 12px;
+    background: var(--color-surface-soft);
+}
+
+.settings-team-icon {
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    background: var(--color-accent-soft);
+    color: var(--color-primary);
+    font-size: 20px;
+}
+
+.settings-team-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.settings-team-copy strong {
+    color: var(--color-text-primary);
+    font-size: 15px;
+}
+
+.settings-team-copy span {
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.settings-team-link .settings-primary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    flex-shrink: 0;
 }
 
 
@@ -806,42 +844,44 @@
  * main application background.
  */
 
-[data-theme="olive"] .settings-sidebar,
-[data-theme="olive"] .settings-panel,
-[data-theme="olive"] .theme-option,
-[data-theme="olive"] .notification-item,
-[data-theme="olive"] .security-item,
-[data-theme="olive"] .user-item {
-    background: var(--color-surface);
+[data-theme="light"] .settings-sidebar {
+    background: #edf2f8;
+    border-color: #d8e1ee;
 }
 
-
-[data-theme="navy"] .settings-sidebar,
-[data-theme="navy"] .settings-panel,
-[data-theme="navy"] .theme-option,
-[data-theme="navy"] .notification-item,
-[data-theme="navy"] .security-item,
-[data-theme="navy"] .user-item {
-    background: var(--color-surface);
+[data-theme="light"] .settings-panel,
+[data-theme="light"] .theme-option {
+    background: #ffffff;
+    border-color: #dce4ef;
 }
 
-
-/*
- * Dark theme inputs should remain clearly visible
- * against their surrounding panels.
- */
-
-[data-theme="olive"] .settings-field input,
-[data-theme="olive"] .settings-field textarea,
-[data-theme="olive"] .settings-field select {
-    background: var(--color-surface-soft);
+[data-theme="light"] .settings-notification-item,
+[data-theme="light"] .security-item,
+[data-theme="light"] .settings-team-link {
+    background: #fbfcfe;
 }
 
+[data-theme="dark"] .settings-sidebar {
+    background: #101a2a;
+    border-color: #27364d;
+}
 
-[data-theme="navy"] .settings-field input,
-[data-theme="navy"] .settings-field textarea,
-[data-theme="navy"] .settings-field select {
-    background: var(--color-surface-soft);
+[data-theme="dark"] .settings-panel,
+[data-theme="dark"] .theme-option {
+    background: #151f30;
+    border-color: #2a3950;
+}
+
+[data-theme="dark"] .settings-notification-item,
+[data-theme="dark"] .security-item,
+[data-theme="dark"] .settings-team-link {
+    background: #182438;
+}
+
+[data-theme="dark"] .settings-field input,
+[data-theme="dark"] .settings-field textarea,
+[data-theme="dark"] .settings-field select {
+    background: #101a2a;
 }
 
 
@@ -897,25 +937,6 @@
         grid-template-columns: 1fr;
     }
 
-    .user-item {
-        grid-template-columns:
-            45px
-            1fr
-            auto;
-    }
-
-    .user-role,
-    .user-status {
-        display: none;
-    }
-
-    .user-access-button {
-        grid-column: 2;
-    }
-
-    .user-manage-button {
-        grid-column: 3;
-    }
 }
 
 
@@ -941,7 +962,7 @@
         width: 100%;
     }
 
-    .notification-item {
+    .settings-notification-item {
         padding: 14px;
     }
 
@@ -954,13 +975,12 @@
         width: 100%;
     }
 
-    .user-item {
-        grid-template-columns: 42px 1fr;
+    .settings-team-link {
+        align-items: flex-start;
+        flex-wrap: wrap;
     }
 
-    .user-access-button,
-    .user-manage-button {
-        grid-column: auto;
+    .settings-team-link .settings-primary-button {
         width: 100%;
     }
 }

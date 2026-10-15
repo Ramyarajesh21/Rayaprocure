@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify
 from app.db import get_db_connection
+from app.security import tenant_id
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -10,59 +11,64 @@ def get_dashboard():
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
 
+    t = tenant_id()
+
     try:
 
         # Total Jobs
         cursor.execute("""
             SELECT COUNT(*) AS total_jobs
             FROM jobs
-        """)
+            WHERE tenant_id = %s
+        """, (t,))
         total_jobs = cursor.fetchone()["total_jobs"]
 
         # Ongoing Jobs
         cursor.execute("""
             SELECT COUNT(*) AS ongoing_jobs
             FROM jobs
-            WHERE status = 'Ongoing'
-        """)
+            WHERE tenant_id = %s AND status = 'Ongoing'
+        """, (t,))
         ongoing_jobs = cursor.fetchone()["ongoing_jobs"]
 
         # Completed Jobs
         cursor.execute("""
             SELECT COUNT(*) AS completed_jobs
             FROM jobs
-            WHERE status = 'Completed'
-        """)
+            WHERE tenant_id = %s AND status = 'Completed'
+        """, (t,))
         completed_jobs = cursor.fetchone()["completed_jobs"]
 
         # Total RFQs / Work Orders
         cursor.execute("""
             SELECT COUNT(*) AS total_rfqs
             FROM rfqs
-        """)
+            WHERE tenant_id = %s
+        """, (t,))
         total_rfqs = cursor.fetchone()["total_rfqs"]
 
         # Approved Quotation Value
         cursor.execute("""
             SELECT COALESCE(SUM(amount), 0) AS quotation_value
             FROM quotations
-            WHERE status = 'Approved'
-        """)
+            WHERE tenant_id = %s AND status = 'Accepted'
+        """, (t,))
         quotation_value = cursor.fetchone()["quotation_value"]
 
         # Total Invoice Value
         cursor.execute("""
             SELECT COALESCE(SUM(amount), 0) AS invoice_value
             FROM invoices
-        """)
+            WHERE tenant_id = %s
+        """, (t,))
         invoice_value = cursor.fetchone()["invoice_value"]
 
         # Total Received Payments
         cursor.execute("""
             SELECT COALESCE(SUM(amount), 0) AS payments_received
             FROM payments
-            WHERE status = 'Received'
-        """)
+            WHERE tenant_id = %s AND status = 'Received'
+        """, (t,))
         payments_received = cursor.fetchone()["payments_received"]
 
         # Outstanding Amount
@@ -88,9 +94,10 @@ def get_dashboard():
                 ON quotations.rfq_id = rfqs.id
             JOIN customers
                 ON rfqs.customer_id = customers.id
+            WHERE jobs.tenant_id = %s
             ORDER BY jobs.id DESC
             LIMIT 5
-        """)
+        """, (t,))
 
         recent_jobs = cursor.fetchall()
 

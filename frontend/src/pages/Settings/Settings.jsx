@@ -1,6 +1,8 @@
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FiArrowRight, FiBell, FiLock, FiSliders, FiUsers } from "react-icons/fi";
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import api from "../../services/api";
 import MainLayout from "../../layouts/MainLayout";
 import PageHeader from "../../components/PageHeader";
 import "./Settings.css";
@@ -14,34 +16,6 @@ const DEFAULT_NOTIFICATIONS = {
     job: true,
     general: false
 };
-
-
-const DEFAULT_USERS = [
-    {
-        id: 1,
-        name: "Owner",
-        role: "Owner",
-        description: "Full system access",
-        initial: "O",
-        active: true
-    },
-    {
-        id: 2,
-        name: "Accounts",
-        role: "Accounts",
-        description: "Invoices and payments",
-        initial: "A",
-        active: true
-    },
-    {
-        id: 3,
-        name: "Operations",
-        role: "Operations",
-        description: "RFQ and quotation management",
-        initial: "P",
-        active: true
-    }
-];
 
 
 /* =========================================================
@@ -129,6 +103,8 @@ function getNotificationRole(role) {
 
 function Settings() {
 
+    const navigate = useNavigate();
+
     const loggedInUser = useMemo(
         () => getLoggedInUser(),
         []
@@ -205,10 +181,6 @@ function Settings() {
         );
 
 
-    const [notificationBackup, setNotificationBackup] =
-        useState(notifications);
-
-
     /* =====================================================
        SECURITY
     ===================================================== */
@@ -238,23 +210,6 @@ function Settings() {
             new: false,
             confirm: false
         });
-
-
-    /* =====================================================
-       USERS
-    ===================================================== */
-
-    const [users, setUsers] =
-        useState(
-            getStorage(
-                "vendorflowUsers",
-                DEFAULT_USERS
-            )
-        );
-
-
-    const [managedUser, setManagedUser] =
-        useState(null);
 
 
     /* =====================================================
@@ -301,28 +256,28 @@ function Settings() {
         {
             id: "theme",
             label: "Theme",
-            icon: "🎨",
+            icon: <FiSliders aria-hidden="true" />,
             visible: isOwner
         },
 
         {
             id: "notifications",
             label: "Notifications",
-            icon: "🔔",
+            icon: <FiBell aria-hidden="true" />,
             visible: true
         },
 
         {
             id: "security",
             label: "Security",
-            icon: "🔒",
+            icon: <FiLock aria-hidden="true" />,
             visible: true
         },
 
         {
             id: "users",
             label: "Users & Access",
-            icon: "👥",
+            icon: <FiUsers aria-hidden="true" />,
             visible: isOwner
         }
 
@@ -383,38 +338,12 @@ function Settings() {
     };
 
 
-    const handleNotificationSave = () => {
-
-        localStorage.setItem(
-            notificationStorageKey,
-            JSON.stringify(notifications)
-        );
-
-
-        setNotificationBackup(notifications);
-
-    };
-
-
     const handleNotificationReset = () => {
-
-        const reset =
-            getStorage(
-                notificationStorageKey,
-                DEFAULT_NOTIFICATIONS
-            );
-
-
-        setNotifications(reset);
-
-        setNotificationBackup(reset);
-
-
+        setNotifications(DEFAULT_NOTIFICATIONS);
         localStorage.setItem(
             notificationStorageKey,
-            JSON.stringify(reset)
+            JSON.stringify(DEFAULT_NOTIFICATIONS)
         );
-
     };
 
 
@@ -503,8 +432,8 @@ function Settings() {
 
 
             const response =
-                await axios.post(
-                    "http://127.0.0.1:5000/api/auth/change-password",
+                await api.post(
+                    "/api/auth/change-password",
                     {
                         username: username,
                         role: userRole,
@@ -570,57 +499,6 @@ function Settings() {
        USERS
     ===================================================== */
 
-    const handleUserToggle = (userId) => {
-
-        if (!isOwner) {
-            return;
-        }
-
-
-        const updatedUsers =
-            users.map(user => {
-
-                if (user.id === userId) {
-
-                    return {
-                        ...user,
-                        active: !user.active
-                    };
-
-                }
-
-                return user;
-
-            });
-
-
-        setUsers(updatedUsers);
-
-
-        localStorage.setItem(
-            "vendorflowUsers",
-            JSON.stringify(updatedUsers)
-        );
-
-    };
-
-
-    const handleManageUser = (user) => {
-
-        if (!isOwner) {
-            return;
-        }
-
-
-        setManagedUser(
-            managedUser?.id === user.id
-                ? null
-                : user
-        );
-
-    };
-
-
     /* =====================================================
        ACTIVE MENU SAFETY
     ===================================================== */
@@ -661,8 +539,9 @@ function Settings() {
             <div className="settings-page">
 
                 <PageHeader
+                    eyebrow="WORKSPACE PREFERENCES"
                     title="Settings"
-                    subtitle="Manage your VendorFlow workspace and preferences."
+                    description="Manage your workspace appearance, notifications, and account security."
                 />
 
 
@@ -762,6 +641,7 @@ function Settings() {
 
                                     <button
                                         type="button"
+                                        aria-pressed={theme === "light"}
                                         className={
                                             theme === "light"
                                                 ? "theme-option selected"
@@ -791,12 +671,12 @@ function Settings() {
                                         <div className="theme-option-info">
 
                                             <strong>
-                                                Modern Obsidian & Cobalt
+                                                Navy & Slate Light
                                             </strong>
 
 
                                             <span>
-                                                Clean light interface with cobalt accents
+                                                Cool slate workspace with navy navigation and cobalt accents
                                             </span>
 
                                         </div>
@@ -815,6 +695,7 @@ function Settings() {
 
                                     <button
                                         type="button"
+                                        aria-pressed={theme === "dark"}
                                         className={
                                             theme === "dark"
                                                 ? "theme-option selected"
@@ -844,12 +725,12 @@ function Settings() {
                                         <div className="theme-option-info">
 
                                             <strong>
-                                                Midnight Slate & Champagne Gold
+                                                Midnight Navy
                                             </strong>
 
 
                                             <span>
-                                                Premium dark interface with gold accents
+                                                Deep navy surfaces with crisp blue highlights
                                             </span>
 
                                         </div>
@@ -941,7 +822,7 @@ function Settings() {
                                         ]) => (
 
                                             <div
-                                                className="notification-item"
+                                                className="settings-notification-item"
                                                 key={key}
                                             >
 
@@ -992,16 +873,9 @@ function Settings() {
                                         className="settings-secondary-button"
                                         onClick={handleNotificationReset}
                                     >
-                                        Reset
+                                        Restore defaults
                                     </button>
 
-
-                                    <button
-                                        className="settings-primary-button"
-                                        onClick={handleNotificationSave}
-                                    >
-                                        Save Preferences
-                                    </button>
 
                                 </div>
 
@@ -1317,144 +1191,25 @@ function Settings() {
                                         </h2>
 
 
-                                        <p>
-                                            Manage the three VendorFlow user accounts.
-                                        </p>
+                                        <p>Manage workspace members and their roles in one place.</p>
 
                                     </div>
 
                                 </div>
 
 
-                                <div className="users-list">
-
-                                    {users.map(user => (
-
-                                        <div
-                                            className="user-item"
-                                            key={user.id}
-                                        >
-
-                                            <div className="user-avatar">
-                                                {user.initial}
-                                            </div>
-
-
-                                            <div className="user-info">
-
-                                                <strong>
-                                                    {user.name}
-                                                </strong>
-
-
-                                                <span>
-                                                    {user.description}
-                                                </span>
-
-                                            </div>
-
-
-                                            <div className="user-role">
-                                                {user.role}
-                                            </div>
-
-
-                                            <div
-                                                className={
-                                                    user.active
-                                                        ? "user-status active"
-                                                        : "user-status inactive"
-                                                }
-                                            >
-
-                                                {user.active
-                                                    ? "Active"
-                                                    : "Inactive"}
-
-                                            </div>
-
-
-                                            <button
-                                                className="user-access-button"
-                                                onClick={() =>
-                                                    handleUserToggle(
-                                                        user.id
-                                                    )
-                                                }
-                                            >
-
-                                                {user.active
-                                                    ? "Disable"
-                                                    : "Enable"}
-
-                                            </button>
-
-
-                                            <button
-                                                className="user-manage-button"
-                                                onClick={() =>
-                                                    handleManageUser(user)
-                                                }
-                                            >
-                                                Manage
-                                            </button>
-
-
-                                            {managedUser?.id === user.id && (
-
-                                                <div className="user-management-panel">
-
-                                                    <strong>
-                                                        {user.name} Account
-                                                    </strong>
-
-
-                                                    <p>
-                                                        Role: {user.role}
-                                                    </p>
-
-
-                                                    <p>
-                                                        Access:
-                                                        {" "}
-                                                        {user.active
-                                                            ? "Enabled"
-                                                            : "Disabled"}
-                                                    </p>
-
-
-                                                    <button
-                                                        className="settings-primary-button"
-                                                        onClick={() =>
-                                                            handleUserToggle(
-                                                                user.id
-                                                            )
-                                                        }
-                                                    >
-
-                                                        {user.active
-                                                            ? "Disable User"
-                                                            : "Enable User"}
-
-                                                    </button>
-
-                                                </div>
-
-                                            )}
-
-                                        </div>
-
-                                    ))}
-
+                                <div className="settings-team-link">
+                                    <div className="settings-team-icon"><FiUsers aria-hidden="true" /></div>
+                                    <div className="settings-team-copy">
+                                        <strong>Team & Access</strong>
+                                        <span>Create accounts, assign roles, and manage member access.</span>
+                                    </div>
+                                    <button type="button" className="settings-primary-button" onClick={() => navigate("/team")}>
+                                        Manage team <FiArrowRight aria-hidden="true" />
+                                    </button>
                                 </div>
 
-
-                                <div className="settings-note">
-
-                                    Only the Owner can manage user access.
-                                    Accounts and Operations cannot access this section.
-
-                                </div>
+                                <div className="settings-note">Changes apply to real workspace members.</div>
 
                             </section>
 

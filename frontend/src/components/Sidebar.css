@@ -479,3 +479,16 @@
         animation: none !important;
     }
 }
+
+.nav-item-icon {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+    margin-right: 11px;
+    opacity: 0.82;
+}
+
+.nav-item.active .nav-item-icon,
+.nav-item:hover .nav-item-icon {
+    opacity: 1;
+}

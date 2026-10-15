@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
 import "./Sidebar.css";
+import { NAV_ITEMS } from "./navItems";
 import rayaprocureLogo from "../assets/icons/rayaprocure-logo.png";
 
 function Sidebar() {
@@ -13,58 +14,7 @@ function Sidebar() {
     const role = user?.role;
 
 
-    const menuItems = [
-        {
-            name: "Dashboard",
-            path: "/dashboard",
-            roles: ["Owner", "Accounts", "Operations"]
-        },
-        {
-            name: "Customers",
-            path: "/customers",
-            roles: ["Owner", "Accounts", "Operations"]
-        },
-        {
-            name: "RFQs",
-            path: "/rfqs",
-            roles: ["Owner", "Operations"]
-        },
-        {
-            name: "Quotations",
-            path: "/quotations",
-            roles: ["Owner", "Operations"]
-        },
-        {
-            name: "Jobs",
-            path: "/jobs",
-            roles: ["Owner"]
-        },
-        {
-            name: "Invoices",
-            path: "/invoices",
-            roles: ["Owner", "Accounts"]
-        },
-        {
-            name: "Payments",
-            path: "/payments",
-            roles: ["Owner", "Accounts"]
-        },
-        {
-            name: "Reports",
-            path: "/reports",
-            roles: ["Owner", "Accounts"]
-        },
-        {
-            name: "Settings",
-            path: "/settings",
-            roles: ["Owner"]
-        },
-        {
-            name: "About",
-            path: "/about",
-            roles: ["Owner", "Accounts", "Operations"]
-        }
-    ];
+    const menuItems = NAV_ITEMS;
 
 
     const visibleMenuItems = menuItems.filter((item) =>
@@ -109,7 +59,9 @@ function Sidebar() {
 
             <nav className="sidebar-nav">
 
-                {visibleMenuItems.map((item) => (
+                {visibleMenuItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
 
                     <NavLink
                         key={item.path}
@@ -121,13 +73,15 @@ function Sidebar() {
                         }
                     >
 
+                        {Icon && <Icon className="nav-item-icon" aria-hidden="true" />}
                         <span>
                             {item.name}
                         </span>
 
                     </NavLink>
 
-                ))}
+                    );
+                })}
 
             </nav>
 
